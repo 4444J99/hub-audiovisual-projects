@@ -3,13 +3,27 @@
 # build_release_packet.sh — Audiovisual Composition Engine (ACE) v1.0.0
 # ==============================================================================
 # Constructs canonical release-packet-v1.0.0 on /Volumes/Scratch/study-export/
-# with exact 6 subdirectories, full licenses, media symlinks, tables, and SHA256SUMS.
+# with exact 6 subdirectories, full licenses, materialized media copies, tables, and SHA256SUMS.
 # ==============================================================================
 set -euo pipefail
 
 REPO_ROOT="/Users/4jp/Workspace/audiovisual-composition-system"
 SCRATCH_DIR="/Volumes/Scratch/study-export"
 PACKET_DIR="${SCRATCH_DIR}/release-packet-v1.0.0"
+
+ADMISSION_SHA256="6c41ab26b70e5a80de053ae397917f5dad34c14a33c0efd6a07dae7f940838e7"
+REQUIRED_TOX_COUNT=24
+
+# Copy (never link) every artifact so the packet is self-contained when restored elsewhere.
+# A missing source aborts the build instead of leaving a dangling entry.
+place() {
+    local src="$1" dest="$2"
+    if [[ ! -f "${src}" ]]; then
+        echo "ERROR: required release artifact missing: ${src}" >&2
+        exit 1
+    fi
+    cp -fL "${src}" "${dest}"
+}
 
 echo "=== Constructing Canonical Release Packet at ${PACKET_DIR} ==="
 
@@ -23,30 +37,38 @@ mkdir -p "${PACKET_DIR}/licensing"
 mkdir -p "${PACKET_DIR}/docs"
 
 # 2. Populate master/
-ln -sf "${SCRATCH_DIR}/buh-take48-integrated-study.mp4" "${PACKET_DIR}/master/buh-take48-integrated-study.mp4"
-ln -sf "${SCRATCH_DIR}/gods-ears-passage-study.mp4" "${PACKET_DIR}/master/gods-ears-passage-study.mp4"
+place "${SCRATCH_DIR}/buh-take48-integrated-study.mp4" "${PACKET_DIR}/master/buh-take48-integrated-study.mp4"
+place "${SCRATCH_DIR}/gods-ears-passage-study.mp4" "${PACKET_DIR}/master/gods-ears-passage-study.mp4"
 
 # 3. Populate stems/
-ln -sf "/Volumes/Ingress/backwards-up-hill/2022FEB-F6/220218_012.WAV" "${PACKET_DIR}/stems/stem-zoom-f6-anchor.wav"
-ln -sf "${REPO_ROOT}/the-thing-without-a-name/.work/music/competition/delibes-master.wav" "${PACKET_DIR}/stems/stem-delibes-score.wav"
-ln -sf "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/fx/assets/dialogue-candidate.wav" "${PACKET_DIR}/stems/stem-dialogue-candidate.wav"
-ln -sf "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/media/foley-movement.m4a" "${PACKET_DIR}/stems/stem-foley-movement.m4a"
-ln -sf "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/media/foley-glass.m4a" "${PACKET_DIR}/stems/stem-foley-glass.m4a"
+place "/Volumes/Ingress/backwards-up-hill/2022FEB-F6/220218_012.WAV" "${PACKET_DIR}/stems/stem-zoom-f6-anchor.wav"
+place "${REPO_ROOT}/the-thing-without-a-name/.work/music/competition/delibes-master.wav" "${PACKET_DIR}/stems/stem-delibes-score.wav"
+place "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/fx/assets/dialogue-candidate.wav" "${PACKET_DIR}/stems/stem-dialogue-candidate.wav"
+place "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/media/foley-movement.m4a" "${PACKET_DIR}/stems/stem-foley-movement.m4a"
+place "${REPO_ROOT}/god-here/corpus/Project archive/Hosted previews/Five realities/media/foley-glass.m4a" "${PACKET_DIR}/stems/stem-foley-glass.m4a"
 
 # 4. Populate project-saves/
-ln -sf "${REPO_ROOT}/.agents/god-here/native-session/audiovisual-material-workspace.11.toe" "${PACKET_DIR}/project-saves/audiovisual-material-workspace.11.toe"
-ln -sf "${REPO_ROOT}/audiovisual-sampler-01.toe" "${PACKET_DIR}/project-saves/audiovisual-sampler-01.toe"
+place "${REPO_ROOT}/.agents/god-here/native-session/audiovisual-material-workspace.11.toe" "${PACKET_DIR}/project-saves/audiovisual-material-workspace.11.toe"
+place "${REPO_ROOT}/audiovisual-sampler-01.toe" "${PACKET_DIR}/project-saves/audiovisual-sampler-01.toe"
 
-# Populate modular-tox/
+# Populate modular-tox/ (the publication spec requires at least the 24 modular operators)
+tox_count=0
+shopt -s nullglob
 for tox in "${REPO_ROOT}/.agents/god-here/"*.tox; do
-    if [[ -f "${tox}" ]]; then
-        ln -sf "${tox}" "${PACKET_DIR}/project-saves/modular-tox/$(basename "${tox}")"
-    fi
+    place "${tox}" "${PACKET_DIR}/project-saves/modular-tox/$(basename "${tox}")"
+    tox_count=$((tox_count + 1))
 done
+shopt -u nullglob
+if (( tox_count < REQUIRED_TOX_COUNT )); then
+    echo "ERROR: modular operator inventory incomplete: ${tox_count} < ${REQUIRED_TOX_COUNT}" >&2
+    exit 1
+fi
 
 # Populate tables/
+# Attention timings are authored score ticks (contiguous, 1183 total), not 30 fps video frames:
+# the 85-107 s passage is 660 video frames, so no frame-rate conversion is applied here.
 cat << 'EOF' > "${PACKET_DIR}/project-saves/tables/table_attention.tsv"
-beat_index	beat_name	start_frame	duration_frames	thematic_role
+beat_index	beat_name	start_tick	duration_ticks	thematic_role
 1	Listen	0	34	Initial sensory calibration; focus on subtle acoustic cues
 2	Inbox	34	146	Engagement with technological / conversational demand
 3	Turn away	180	101	Aversion and physical repositioning across optical axis
@@ -89,9 +111,16 @@ word_id	text_cue	start_sec	duration_sec	fade_in_sec	fade_out_sec
 EOF
 
 # 5. Populate metadata/
-ln -sf "${SCRATCH_DIR}/buh-take48-integrated-study.reproducibility-manifest.json" "${PACKET_DIR}/metadata/buh-take48-integrated-study.reproducibility-manifest.json"
-ln -sf "${SCRATCH_DIR}/gods-ears-passage-study.reproducibility-manifest.json" "${PACKET_DIR}/metadata/gods-ears-passage-study.reproducibility-manifest.json"
-ln -sf "${REPO_ROOT}/docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json" "${PACKET_DIR}/metadata/edition-receipt.json"
+place "${SCRATCH_DIR}/buh-take48-integrated-study.reproducibility-manifest.json" "${PACKET_DIR}/metadata/buh-take48-integrated-study.reproducibility-manifest.json"
+place "${SCRATCH_DIR}/gods-ears-passage-study.reproducibility-manifest.json" "${PACKET_DIR}/metadata/gods-ears-passage-study.reproducibility-manifest.json"
+place "${REPO_ROOT}/docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json" "${PACKET_DIR}/metadata/edition-receipt.json"
+
+# Enforce the pinned admission receipt digest before anything is checksummed.
+receipt_sha="$(shasum -a 256 "${PACKET_DIR}/metadata/edition-receipt.json" | awk '{print $1}')"
+if [[ "${receipt_sha}" != "${ADMISSION_SHA256}" ]]; then
+    echo "ERROR: admission receipt digest ${receipt_sha} != pinned ${ADMISSION_SHA256}" >&2
+    exit 1
+fi
 
 cat << 'EOF' > "${PACKET_DIR}/metadata/sensory-accessibility.vtt"
 WEBVTT
@@ -145,7 +174,15 @@ EOF
 cp "/Users/4jp/Workspace/library/shelves/organvm-ii-poiesis/alchemical-synthesizer/LICENSES/AGPL-3.0-or-later.txt" "${PACKET_DIR}/licensing/LICENSE-SOFTWARE"
 
 # Fetch full verbatim CC-BY-NC-SA-4.0 legal text
-curl -s https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.txt > "${PACKET_DIR}/licensing/LICENSE-ARTWORK"
+license_tmp="$(mktemp)"
+trap 'rm -f "${license_tmp}"' EXIT
+curl --fail --show-error --silent --location \
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.txt -o "${license_tmp}"
+if ! grep -q "Attribution-NonCommercial-ShareAlike 4.0 International" "${license_tmp}"; then
+    echo "ERROR: downloaded artwork license does not contain the CC BY-NC-SA 4.0 legal text" >&2
+    exit 1
+fi
+install -m 0644 "${license_tmp}" "${PACKET_DIR}/licensing/LICENSE-ARTWORK"
 
 cat << 'EOF' > "${PACKET_DIR}/licensing/ATTRIBUTION.md"
 # Audiovisual Composition Engine (ACE) — Archival Release Attribution
@@ -171,17 +208,17 @@ cat << 'EOF' > "${PACKET_DIR}/licensing/ATTRIBUTION.md"
 EOF
 
 # 7. Populate docs/ (6th Subdirectory)
-ln -sf "${REPO_ROOT}/docs/acceptance/artistic-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/artistic-acceptance-2026-10-31.md"
-ln -sf "${REPO_ROOT}/docs/acceptance/physical-device-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/physical-device-acceptance-2026-10-31.md"
-ln -sf "${REPO_ROOT}/docs/acceptance/custody-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/custody-acceptance-2026-10-31.md"
-ln -sf "${REPO_ROOT}/docs/acceptance/publication-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/publication-acceptance-2026-10-31.md"
-ln -sf "${REPO_ROOT}/TEST_READY.md" "${PACKET_DIR}/docs/TEST_READY.md"
+place "${REPO_ROOT}/docs/acceptance/artistic-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/artistic-acceptance-2026-10-31.md"
+place "${REPO_ROOT}/docs/acceptance/physical-device-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/physical-device-acceptance-2026-10-31.md"
+place "${REPO_ROOT}/docs/acceptance/custody-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/custody-acceptance-2026-10-31.md"
+place "${REPO_ROOT}/docs/acceptance/publication-acceptance-2026-10-31.md" "${PACKET_DIR}/docs/publication-acceptance-2026-10-31.md"
+place "${REPO_ROOT}/TEST_READY.md" "${PACKET_DIR}/docs/TEST_READY.md"
 
 # 8. Generate SHA256SUMS Manifest
 echo "Generating SHA256SUMS manifest..."
 cd "${PACKET_DIR}"
 rm -f SHA256SUMS
-find * \( -type f -o -type l \) ! -name "SHA256SUMS" ! -name ".DS_Store" | sort | xargs shasum -a 256 > SHA256SUMS
+find . -type f ! -name "SHA256SUMS" ! -name ".DS_Store" | sed 's|^\./||' | sort | xargs shasum -a 256 > SHA256SUMS
 
 echo "Verifying SHA256SUMS manifest..."
 shasum -a 256 -c SHA256SUMS

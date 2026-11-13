@@ -218,7 +218,7 @@ Every claim in this baseline is backed by genuine, live command executions. In a
    python3.14 -m pytest /Users/4jp/Workspace/audiovisual-composition-system/tools/tests
    ```
    *Execution Verdict*: `55 passed in 3.43s` (Exit Code 0).
-   *Coverage*: `test_custody_danse.py` (4), `test_custody_original_media.py` (6), `test_identity_contract.py` (19), `test_implementation_contract.py` (4), `test_repository_access.py` (2), `test_workspace_layout.py` (20).
+   *Coverage*: `test_custody_danse.py` (4), `test_custody_original_media.py` (6), `test_identity_contract.py` (20), `test_implementation_contract.py` (4), `test_repository_access.py` (2), `test_workspace_layout.py` (26). Per-file counts were re-collected on 2026-11-13 in the PR worktree (`unittest`): identity 20, workspace layout 26, which differ from the earlier 55-test total and the 20/17 individual runs below; those were taken against different checkout states and are retained as historical records, not as a current baseline.
 
 2. **Workspace Layout Status Census**:
    ```bash

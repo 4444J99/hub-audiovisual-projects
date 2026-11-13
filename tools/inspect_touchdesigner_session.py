@@ -5,13 +5,15 @@ with this file. Findings stay in this workspace's ignored .agents directory.
 """
 
 
-def inspect_session(td):
+def inspect_session(td, workspace=None, output_dir=None):
     import json
     import os
     from datetime import datetime, timezone
     from pathlib import Path
 
-    workspace = Path("/Users/4jp/Workspace/audiovisual-composition-system")
+    if workspace is None:
+        workspace = Path("/Users/4jp/Workspace/audiovisual-composition-system")
+    workspace = Path(workspace)
     authorized_projects = {
         (workspace / "audiovisual-sampler-01.toe").resolve(),
         (workspace / ".agents/god-here/native-session/audiovisual-material-workspace.11.toe").resolve(),
@@ -103,9 +105,17 @@ def inspect_session(td):
                 report["errors"].append(
                     {"path": node.path, "kind": method, "message": message})
 
-    report["project"]["dirty_after"] = root.dirty
-    report["status"] = "complete" if not report["inspection_issues"] else "partial"
-    destination = workspace / ".agents" / "touchdesigner-inspection"
+    dirty_after = root.dirty
+    report["project"]["dirty_after"] = dirty_after
+    integrity_failure = dirty_after != dirty_before
+    if integrity_failure:
+        report["status"] = "failed"
+        report["integrity_error"] = "Project dirty state changed during a read-only inspection."
+    else:
+        report["status"] = "complete" if not report["inspection_issues"] else "partial"
+    if output_dir is None:
+        output_dir = workspace / ".agents" / "touchdesigner-inspection"
+    destination = Path(output_dir)
     destination.mkdir(mode=0o700, parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     output = destination / ("session-" + stamp + ".json")
@@ -113,6 +123,12 @@ def inspect_session(td):
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
         handle.write("\n")
+    if integrity_failure:
+        # The failure receipt is preserved above; the caller must not treat this as a clean read.
+        raise RuntimeError(
+            f"Inspection integrity failure: root.dirty changed from {dirty_before} to {dirty_after}; "
+            f"receipt preserved at {output}"
+        )
     print("TouchDesigner session inspection written to " + str(output))
 
 
@@ -216,6 +232,10 @@ def verify_offline_toe_files(workspace_root=None, app_path=None, verbose=True):
                 raise FileNotFoundError(f"Governing manifest missing: {mp}")
             with open(mp, "r", encoding="utf-8") as mfp:
                 mdata = json.load(mfp)
+            if mdata.get("working_file") != p.name:
+                raise ValueError(
+                    f"Manifest working_file mismatch in {mp}: {mdata.get('working_file')!r} != {p.name!r}"
+                )
             if mdata.get("sha256") != actual_sha256:
                 raise ValueError(f"Manifest sha256 mismatch in {mp}: {mdata.get('sha256')} != {actual_sha256}")
             if mdata.get("bytes") != size:
@@ -224,7 +244,12 @@ def verify_offline_toe_files(workspace_root=None, app_path=None, verbose=True):
                 print(f"  Manifest Authority: {mp.name} (MATCH)")
 
         # Run toeexpand -b (Note: exits with code 1 upon successful header display)
-        proc = subprocess.run([str(toeexpand_bin), "-b", str(p)], capture_output=True, text=True)
+        # Argument list (no shell); the binary is the fixed toeexpand inside the operator-selected
+        # TouchDesigner app bundle and the target is a verified canonical save, so no untrusted
+        # data reaches the command line.
+        proc = subprocess.run(  # nosemgrep
+            [str(toeexpand_bin), "-b", str(p)], capture_output=True, text=True, check=False
+        )  # nosec B603
         if proc.stderr.strip():
             raise RuntimeError(f"toeexpand reported error for {p}: {proc.stderr.strip()}")
 

@@ -67,20 +67,25 @@ class InspectSession(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Inspection refused: open project"):
             inspect_session(MockTD())
 
-    @unittest.skipUnless(os.access(LIVE_ROOT, os.W_OK), "needs the writable live workspace root")
-    def test_validates_authorized_project_path(self):
+    def _td(self, folder, dirty_values):
+        values = iter(dirty_values)
+
         class MockNode:
             path = "/"
-            dirty = False
             children = []
+
+            @property
+            def dirty(self):
+                return next(values)
 
         class MockApp:
             version = "2025.33230"
             build = "2025.33230"
 
         class MockProject:
-            folder = "/Users/4jp/Workspace/audiovisual-composition-system"
             name = "audiovisual-sampler-01.toe"
+
+        MockProject.folder = str(folder)
 
         class MockTD:
             project = MockProject()
@@ -89,7 +94,28 @@ class InspectSession(unittest.TestCase):
             def op(self, path):
                 return MockNode()
 
-        inspect_session(MockTD())
+        return MockTD()
+
+    def test_validates_authorized_project_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workspace = Path(tmpdir) / "workspace"
+            workspace.mkdir()
+            out = Path(tmpdir) / "receipts"
+            inspect_session(self._td(workspace, [False, False]), workspace=workspace, output_dir=out)
+            receipts = list(out.glob("session-*.json"))
+            self.assertEqual(len(receipts), 1)
+            self.assertIn('"status": "complete"', receipts[0].read_text())
+
+    def test_rejects_dirty_state_change(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workspace = Path(tmpdir) / "workspace"
+            workspace.mkdir()
+            out = Path(tmpdir) / "receipts"
+            with self.assertRaisesRegex(RuntimeError, "integrity failure"):
+                inspect_session(self._td(workspace, [False, True]), workspace=workspace, output_dir=out)
+            receipts = list(out.glob("session-*.json"))
+            self.assertEqual(len(receipts), 1)
+            self.assertIn('"status": "failed"', receipts[0].read_text())
 
 
 if __name__ == "__main__":

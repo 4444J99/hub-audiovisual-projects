@@ -118,7 +118,9 @@ System admission requires cryptographic verification of the pinned admission rec
 When `audiovisual-material-workspace.11.toe` is opened in TouchDesigner 2025.33230 with disk-bound `tables/` and `stems/`:
 1. Playing from $t=85.0\text{s}$ to $t=107.0\text{s}$ deterministically evaluates all 10 attention beats with 0 cook errors.
 2. The Audio Device Out peak matches $0.691441$ within $\pm 0.001\text{ dBFS}$.
-3. Non-destructive textport inspection via `tools/inspect_touchdesigner_session.py` operates in read-only mode with zero file dirtying.
+3. Non-destructive textport inspection via `tools/inspect_touchdesigner_session.py` operates in read-only mode with zero file dirtying (the tool now fails with a preserved failure receipt if `root.dirty` changes).
+
+> **Status: PENDING live replay records.** The 0.691441 peak is recorded in `physical-device-acceptance-2026-10-31.md`. No record is cited here for the 10-beat zero-cook-error replay or the zero-dirtying check on the working save; these criteria are not yet evidenced.
 
 ---
 
@@ -136,4 +138,4 @@ When `audiovisual-material-workspace.11.toe` is opened in TouchDesigner 2025.332
 | Sampler Baseline SHA-256 | `shasum -a 256` | `6f0945873871...` | Exact match | **PASS** |
 | Non-destructive TD Inspection | Offline toeexpand header probe & session inspection contract | Build 2025.33230 matched (zero build skew), hashes & sizes verified | Both canonical .toe saves verified | **PASS** |
 
-**Conclusion**: All publication packaging standards, checksum manifests, licensing declarations, admission pinning, and TouchDesigner reproducibility contracts have been verified. Publication Acceptance is formally granted.
+**Conclusion**: All publication packaging standards, checksum manifests, licensing declarations, admission pinning, and offline TouchDesigner save verification are evidenced. Runtime replay reproducibility (Section 5.2) is pending live records; Publication Acceptance is granted for packaging and offline verification only.

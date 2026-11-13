@@ -15,7 +15,9 @@ Requirement R1 of the Audiovisual Composition Engine (ACE) mandate requires:
 
 Following exhaustive verification of host binaries, file headers, offline test suites, session inspection receipts, and media dependency trees:
 
-**EXECUTION ADMISSION VERDICT: ADMITTED / CLEARED**
+**EXECUTION ADMISSION VERDICT: OFFLINE VERIFICATION CLEARED; LIVE EXECUTION ADMISSION PENDING**
+
+The offline evidence below (file hashes, headers, build concordance, tests, media checks) does not establish that `audiovisual-material-workspace.11.toe` reopened or executed. The inspection receipt covers `audiovisual-sampler-01.toe` and does not evaluate playback. Execution admission for the working save stays pending until a live reopen and execution receipt for it exists.
 
 ### Core Findings
 1. **Zero Version Skew Confirmed**: Host binary `/Applications/TouchDesigner.app` is build `2025.33230`. Both reconciled native project files (`audiovisual-material-workspace.11.toe` and `audiovisual-sampler-01.toe`) were authored and saved on build `2025.33230`. Reopening incurs **zero operator migrations, zero parameter deprecations, and zero version upgrade warnings**.

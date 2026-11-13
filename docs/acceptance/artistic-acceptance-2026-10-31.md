@@ -19,22 +19,24 @@ This document establishes the formal Artistic Acceptance for the Audiovisual Com
 
 ### 2.1 Macro-Structural Phrasing
 
-The composition enforces four distinct macro-temporal sections over the 85.0s–107.0s authored passage (22.0 seconds nominal, 660 frames @ 30 fps in God's Ears, corroborated in `.agents/god-here/native-session/second-passage-verification-20261016.json`):
+The composition enforces four distinct macro-temporal sections over the 85.0s–107.0s authored passage (22.0 seconds nominal, 660 video frames @ 30 fps in God's Ears, corroborated in `.agents/god-here/native-session/second-passage-verification-20261016.json`):
 
-1. **Offer** ($t \in [85.000\text{s}, 88.233\text{s}]$, 180 frames):
+1. **Offer** ($t \in [85.000\text{s}, 88.233\text{s}]$, 180 score ticks):
    - Establishes baseline visual presence; Camera Angle A; initial acoustic emergence and performer contact.
-2. **Deflect** ($t \in [88.233\text{s}, 95.000\text{s}]$, 385 frames):
+2. **Deflect** ($t \in [88.233\text{s}, 95.000\text{s}]$, 385 score ticks):
    - Spatial displacement; transition to Camera Angle B; introduction of tension and dialogue displacement.
-3. **Linger** ($t \in [95.000\text{s}, 100.500\text{s}]$, 238 frames):
+3. **Linger** ($t \in [95.000\text{s}, 100.500\text{s}]$, 238 score ticks):
    - Spatial deceleration; Camera Angle C; temporal trace delay accumulation and performer retreat.
-4. **Correction / Challenge** ($t \in [100.500\text{s}, 107.000\text{s}]$, 380 frames):
+4. **Correction / Challenge** ($t \in [100.500\text{s}, 107.000\text{s}]$, 380 score ticks):
    - Peak perceptual intensity; dense dialogue-foley interplay; resolution of the primary thematic conflict.
+
+> **Unit note.** Section and beat durations below are authored score ticks (they sum to 1,183), not 30 fps video frames; the passage itself is 660 video frames. The tick-to-frame mapping is not derived in this record, so the section tick counts are not claimed to reproduce the stated second boundaries, and the exported `table_attention.tsv` uses `start_tick`/`duration_ticks` accordingly. A reproducible frame-coordinate timeline is pending a recorded conversion.
 
 ### 2.2 Attention Beat Contiguity
 
 The score progression requires exactly 10 strictly contiguous attention beats defined in `table_attention.tsv`:
 
-| Beat Index | Beat Name | Start Frame (approx) | Frame Duration | Thematic / Perceptual Role |
+| Beat Index | Beat Name | Start Tick | Tick Duration | Thematic / Perceptual Role |
 |:---:|:---|:---:|:---:|:---|
 | 1 | **Listen** | 0 | 34 | Initial sensory calibration; focus on subtle acoustic cues |
 | 2 | **Inbox** | 34 | 146 | Engagement with technological / conversational demand |
@@ -49,7 +51,7 @@ The score progression requires exactly 10 strictly contiguous attention beats de
 
 **Contiguity Proof**:
 - Interval Errors: Exactly `0`.
-- Completeness: $\text{start\_frame}[1] = 85.0\text{s}$, $\text{end\_frame}[10] = 107.0\text{s}$.
+- Completeness: $\text{start\_tick}[1]$ maps to $85.0\text{s}$ and $\text{end\_tick}[10]$ to $107.0\text{s}$ (conversion pending, see unit note).
 - Zero overlap, zero temporal gap: $\forall i \in [1, 9], \text{end}[i] == \text{start}[i+1]$.
 
 ### 2.3 Multi-Performer Picture Fields & Proportional Framing

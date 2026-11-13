@@ -41,7 +41,7 @@ Forensic disk inspection reveals that the external storage subsystem is governed
 - **Physical Device Co-Residence & I/O Policy**:
   Because `Archive4T`, `Ingress`, and `Scratch` share physical controller bus `disk9`, concurrent heavy read/write operations contend for underlying physical channel bandwidth. Heavy I/O pipelines must serialize transfers and avoid reckless parallel floods.
 - **Independent Hardware T7 Device**:
-  The separate recovery drive `/Volumes/T7Recovery` (UUID `0287E02B-989A-419B-A7CA-B4BCE4ECA1FF`, ParentWholeDisk: `disk10`) is physically decoupled on a discrete USB/Thunderbolt controller bus, providing air-gapped device independence.
+  The separate recovery drive `/Volumes/T7Recovery` (UUID `0287E02B-989A-419B-A7CA-B4BCE4ECA1FF`, ParentWholeDisk: `disk10`) is separate hardware on a discrete USB/Thunderbolt controller bus, providing device independence. It is connected to the host while mounted and is therefore not air-gapped; any offline custody procedure is recorded separately.
 
 ### 2.2 Root Volume Latch Constraint (< 200 GiB Free)
 
@@ -94,7 +94,7 @@ All authoritative project assets, native saves, manifests, and master raw record
 
 ## 4. Non-Overwriting Atomic Promotion Protocol
 
-To prevent partial writes, corruption during sudden power interruption, or overwriting valid media, asset promotion adheres strictly to the atomic promotion protocol defined in `tools/custody_original_media.py`:
+To prevent partial writes, corruption during sudden power interruption, or overwriting valid media, asset promotion adheres strictly to the atomic promotion protocol specified for `custody_original_media.py`. That implementation is not in this repository's `tools/`; it was migrated to `scripts/custody_original_media.py` in `4444J99/limen`, and the commit checked is not recorded here:
 
 1. **Active Handle Audit**: Before promotion, `lsof -n -P +f -- <source>` confirms returncode 1 (zero active reading/writing processes).
 2. **Volume Reserve Verification**: Target volume capacity must satisfy $\text{Avail} \ge \text{FileSize} + 20\text{ GiB}$.
@@ -118,6 +118,6 @@ To prevent partial writes, corruption during sudden power interruption, or overw
 | Manifest SHA-256 | `shasum -a 256` | `a784e8fdf939...` | Exact match | **PASS** |
 | Corpus Validation Digest | `shasum -a 256` | `0e24916e7fae...` | 222 files clean | **PASS** |
 | Take 48 Media Files Integrity | `shasum -a 256` | Exact hashes verified | Zero bit rot | **PASS** |
-| Atomic Promotion Mechanics | Partials & fsync check | Protocol verified | Zero overwrite / partial risk | **PASS** |
+| Atomic Promotion Mechanics | Partials & fsync check | Protocol specified; implementation not re-verified in this record (no command output cited) | Zero overwrite / partial risk | **PENDING** |
 
-**Conclusion**: Physical storage boundaries, volume space constraints, cryptographic manifests, and atomic custody promotion mechanics are completely evidenced and verified. Custody Acceptance is formally granted.
+**Conclusion**: Physical storage boundaries, volume space constraints, cryptographic manifests, and and cryptographic manifests are evidenced. Atomic promotion mechanics remain pending a cited verification of the implementation (repository, commit, command and output); Custody Acceptance is therefore granted for the storage and manifest criteria only.

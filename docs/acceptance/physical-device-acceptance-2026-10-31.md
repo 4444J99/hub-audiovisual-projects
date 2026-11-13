@@ -89,7 +89,7 @@ assert status.rate == 1.0
 # Real RAF clock delivers frames with dt <= 0.25s
 assert max(frame_deltas) <= 0.25
 # Diagnostic simulation capped to INSUFFICIENT
-assert result.verdict == Verdict.INSUFFICIENT if is_sim else Verdict.PASS
+assert result.verdict == (Verdict.INSUFFICIENT if is_sim else Verdict.PASS)
 ```
 
 ---
