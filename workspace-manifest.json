@@ -497,7 +497,11 @@
     "components",
     "archives",
     "artworks",
-    "manifests"
+    "manifests",
+    "audiovisual-sampler-01.toe",
+    "audiovisual-sampler-01.9.toe",
+    "Backup",
+    "Log"
   ],
   "preserved_root_files": [
     "HANDOFF_AMBISONIC_INTEGRATION.md",
