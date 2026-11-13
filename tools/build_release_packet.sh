@@ -22,6 +22,7 @@ place() {
         echo "ERROR: required release artifact missing: ${src}" >&2
         exit 1
     fi
+    rm -f "${dest}"
     cp -fL "${src}" "${dest}"
 }
 
@@ -218,7 +219,7 @@ place "${REPO_ROOT}/TEST_READY.md" "${PACKET_DIR}/docs/TEST_READY.md"
 echo "Generating SHA256SUMS manifest..."
 cd "${PACKET_DIR}"
 rm -f SHA256SUMS
-find . -type f ! -name "SHA256SUMS" ! -name ".DS_Store" | sed 's|^\./||' | sort | xargs shasum -a 256 > SHA256SUMS
+find . -type f ! -name "SHA256SUMS" ! -name ".DS_Store" -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | sed 's|  \./|  |' > SHA256SUMS
 
 echo "Verifying SHA256SUMS manifest..."
 shasum -a 256 -c SHA256SUMS
