@@ -67,6 +67,7 @@ class InspectSession(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Inspection refused: open project"):
             inspect_session(MockTD())
 
+    @unittest.skipUnless(os.access(LIVE_ROOT, os.W_OK), "needs the writable live workspace root")
     def test_validates_authorized_project_path(self):
         class MockNode:
             path = "/"
