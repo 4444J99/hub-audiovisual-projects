@@ -1,7 +1,7 @@
 """Safety predicates for directory navigation and generated documents."""
 
 import importlib.util
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 import subprocess
 import unittest
@@ -19,6 +19,34 @@ class LayoutSafety(unittest.TestCase):
         for value in ("../private", "/private", "x/../../secret", "x\\y", ""):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 layout.safe_path(value)
+
+    def test_control_characters_rejected(self):
+        for value in ("safe\n!/published-private", "safe\nREADME.md", "safe\n!published-private",
+                      "safe\rextra", "safe\r\nextra", "safe\x00extra", "safe\x1fextra",
+                      "safe\x7fextra", "safe\textra", "\n", "nested/safe\nextra"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                layout.safe_path(value)
+
+    def test_valid_portable_bindings_still_accepted(self):
+        for value in ("source", "Archive with spaces", "nested/source", "name-with.dots_and~marks"):
+            with self.subTest(value=value):
+                self.assertEqual(layout.safe_path(value), PurePosixPath(value))
+
+    def test_ignore_block_cannot_gain_directives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            with patch.object(layout, "REPOSITORY", root):
+                for value in ("safe\nREADME.md", "safe\n!published-private", "safe\rextra", "safe\r\nextra"):
+                    manifest = {"root_entries": [], "preserved_root_files": [value],
+                                "projects": [], "repositories": [], "components": [], "archives": []}
+                    with self.subTest(value=value), self.assertRaises(ValueError):
+                        layout.rendered_ignore(manifest)
+                values = ["source", "Archive with spaces"]
+                manifest = {"root_entries": [], "preserved_root_files": values,
+                            "projects": [], "repositories": [], "components": [], "archives": []}
+                block = layout.rendered_ignore(manifest).split("# BEGIN generated sources\n")[1]
+                directives = block.split("# END generated sources")[0].splitlines()
+                self.assertEqual(directives, ["/Archive\\ with\\ spaces", "/source"])
 
     def test_regular_destination_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -252,6 +280,111 @@ class LayoutSafety(unittest.TestCase):
                 layout.check_workspace(manifest, catalog_only=True)
                 with self.assertRaisesRegex(ValueError, "Missing declared source"):
                     layout.check_workspace(manifest)
+
+    def test_verify_native_admission_status_default(self):
+        result = layout.verify_native_admission_status()
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["admission_status"], "admitted_operator_override")
+        self.assertTrue(result["external_broker_waived"])
+        self.assertTrue(result["policy_priority_override"])
+        self.assertEqual(result["baseline_repositories_verified"], 7)
+        self.assertEqual(result["baseline_prs_verified"], 31)
+        self.assertEqual(result["errors"], [])
+
+    def test_verify_native_admission_status_tampered(self):
+        # 1. Invalid admission_status
+        bad_status = {
+            "native_admission": {
+                "admission_status": "broker_pending",
+                "external_broker_waived": True,
+                "policy_priority_override": True,
+            },
+            "merged_trunk_baseline": {},
+        }
+        res1 = layout.verify_native_admission_status(bad_status)
+        self.assertEqual(res1["status"], "FAIL")
+        self.assertTrue(any("expected 'admitted_operator_override'" in e for e in res1["errors"]))
+
+        # 2. Broker not waived
+        not_waived = {
+            "native_admission": {
+                "admission_status": "admitted_operator_override",
+                "external_broker_waived": False,
+                "policy_priority_override": True,
+            },
+            "merged_trunk_baseline": {},
+        }
+        res2 = layout.verify_native_admission_status(not_waived)
+        self.assertEqual(res2["status"], "FAIL")
+        self.assertTrue(any("external_broker_waived must be true" in e for e in res2["errors"]))
+
+        # 3. Missing manifest file
+        res3 = layout.verify_native_admission_status(Path("/nonexistent/manifest.json"))
+        self.assertEqual(res3["status"], "FAIL")
+        self.assertTrue(any("Missing continuation manifest" in e for e in res3["errors"]))
+
+    def test_audit_estate_wave_progression_default(self):
+        result = layout.audit_estate_wave_progression()
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["total_projects"], 15)
+        self.assertEqual(result["source_led_count"], 8)
+        self.assertEqual(result["active_repo_count"], 7)
+        self.assertTrue(result["coverage_complete"])
+        self.assertEqual(result["errors"], [])
+        self.assertEqual(len(result["wave_progressions"]), 15)
+
+    def test_audit_estate_wave_progression_tampered(self):
+        # 1. Missing active repository
+        incomplete_manifest = {
+            "merged_trunk_baseline": {
+                "audiovisual-composition-system": {"full_name": "4444J99/audiovisual-composition-system", "merged_prs": [15, 16, 17, 18]}
+            }
+        }
+        res1 = layout.audit_estate_wave_progression(manifest_data=incomplete_manifest)
+        self.assertEqual(res1["status"], "FAIL")
+        self.assertFalse(res1["coverage_complete"])
+        self.assertTrue(any("Missing active repository" in e for e in res1["errors"]))
+
+        # 2. Missing source-led work
+        incomplete_source_led = {"works": {}}
+        res2 = layout.audit_estate_wave_progression(source_led_data=incomplete_source_led)
+        self.assertEqual(res2["status"], "FAIL")
+        self.assertFalse(res2["coverage_complete"])
+        self.assertTrue(any("Missing source-led work" in e for e in res2["errors"]))
+
+        # 3. Missing continuation files
+        res3 = layout.audit_estate_wave_progression(manifest_data=Path("/missing/manifest.json"),
+                                                    source_led_data=Path("/missing/records.json"))
+        self.assertEqual(res3["status"], "FAIL")
+        self.assertFalse(res3["coverage_complete"])
+        self.assertEqual(len(res3["errors"]), 17)  # 2 missing files + 7 repos + 8 works
+
+    def test_generate_estate_completion_seal_default(self):
+        seal = layout.generate_estate_completion_seal()
+        self.assertEqual(seal["schema"], "ace.estate_completion_seal.v1")
+        self.assertFalse(seal["ready"])
+        self.assertTrue(seal["coverage_ready"])
+        self.assertEqual(seal["total_projects"], 15)
+        self.assertEqual(seal["active_repos"], 7)
+        self.assertEqual(seal["source_led_works"], 8)
+        self.assertEqual(len(seal["wave_progressions"]), 15)
+        self.assertTrue(any("source-owner" in error for error in seal["errors"]))
+        self.assertEqual(seal["seal_digest"], seal["digest"])
+        self.assertEqual(len(seal["seal_digest"]), 64)
+
+        # Verify digest reproducibility
+        payload = {k: v for k, v in seal.items() if k not in ("seal_digest", "digest")}
+        import hashlib
+        import json
+        expected = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+        self.assertEqual(seal["seal_digest"], expected)
+
+    def test_generate_estate_completion_seal_tampered(self):
+        bad_manifest = {"merged_trunk_baseline": {}}
+        seal = layout.generate_estate_completion_seal(manifest_data=bad_manifest)
+        self.assertEqual(seal["schema"], "ace.estate_completion_seal.v1")
+        self.assertFalse(seal["ready"])
+        self.assertTrue(len(seal["errors"]) > 0)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 # Handoff to Codex: audiovisual acceptance and session closeout
 
+Historical handoff from October 18, retained as source evidence. Current scoped
+instructions govern new work. Native conversation archiving preserves history
+and does not require engineering release, custody or unrelated process proofs.
+
 Written 2026-10-18 02:25 EDT by Antigravity. Status is evidence-bound: nothing below is merged, live, or accepted unless it says so. Prior "PASS/COMPLETE" dashboard labels were withdrawn after external audit. Treat all recalled paths and SHAs as hypotheses; re-verify against disk and git.
 
 ## Why this handoff exists

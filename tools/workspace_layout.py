@@ -2,6 +2,7 @@
 """Render and validate the ACE catalog; create non-destructive local views."""
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -17,9 +18,14 @@ from identity_contract import public_catalog, validate_manifest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def safe_path(value):
+    # A control character (LF/CR above all) would split one manifest value into
+    # several generated .gitignore directives, so reject it before building a path.
+    if CONTROL.search(value):
+        raise ValueError(f"Nonportable workspace binding: {value!r}")
     path = PurePosixPath(value)
     if not value or str(path) == "." or path.is_absolute() or ".." in path.parts or "\\" in value:
         raise ValueError(f"Nonportable workspace binding: {value!r}")
@@ -93,6 +99,258 @@ def load_manifest():
     return manifest
 
 
+BOUNDARIES = {
+    "backwards-up-hill": "Source binding missing; related footage referenced by time-moment-brief; independent source custody preservation required.",
+    "cycles": "Verified Page image inventory; no public implementation repository resolved; preserve source collection.",
+    "danse": "Canonical source in private repository with deterministic performance engine; archived public continuation distinct; verify engine test suite and maintain custody.",
+    "etc": "Artwork record preserved; historical etceter4 site association unresolved; maintain separate identity.",
+    "god-here": "Active implementation in audiovisual-media-postproduction-system; local preservation git repository retained separately.",
+    "hole-loop": "Active implementation in timed-text-navigation-loop; compose timed text encounter with browser score.",
+    "mavsoleum-a": "Active implementation in generative-multimedia-spatial-environment; historical website composition.",
+    "noonlight": "Source-led artwork record; unversioned media custody required; implementation location unresolved.",
+    "nrcsvs": "Research archive and chat vault (reflect-recur); local unversioned preservation; no public implementation repository.",
+    "nvde": "Source-led artwork record; unversioned media custody required; implementation location unresolved.",
+    "ogod": "Active implementation in generative-multimedia-spatial-environment; preserve shared source owner.",
+    "passing-thru": "Source-led artwork record; unversioned media custody required; implementation location unresolved.",
+    "simvltanea": "Active implementation in independent-loop-compositor; retain Python layout, editions, and loop composition.",
+    "time-moment-brief": "Authoritative shared-engine and multicamera playback repository; restricted implementation; independent custody required.",
+    "wrvng-v": "Source-led artwork record; unversioned media custody required; implementation location unresolved.",
+}
+
+REQUIRED_BASELINE_PRS = {
+    "audiovisual-composition-system": (15, 16, 17, 18, 19),
+    "audiovisual-media-postproduction-system": (118, 119, 120, 121, 122),
+    "simvltanea": (34, 35, 36, 37),
+    "time-moment-brief": (18, 19, 20, 21),
+    "timed-text-navigation-loop": (65, 66, 67, 68, 69),
+    "generative-multimedia-spatial-environment": (183, 184, 186),
+    "the-thing-without-a-name-screendance": (72, 73, 74, 75, 76),
+}
+
+EXPECTED_ACTIVE_REPOS = tuple(REQUIRED_BASELINE_PRS.keys())
+
+EXPECTED_SOURCE_LED_WORKS = (
+    "backwards-up-hill",
+    "cycles",
+    "etc",
+    "noonlight",
+    "nrcsvs",
+    "nvde",
+    "passing-thru",
+    "wrvng-v",
+)
+
+
+def verify_native_admission_status(manifest_data=None):
+    """Validate a historical authorization record, never current executor authority."""
+    if manifest_data is None:
+        continuation_path = REPOSITORY / "manifests" / "project-continuation.json"
+        if not continuation_path.is_file():
+            return {
+                "status": "FAIL",
+                "admission_status": "missing",
+                "external_broker_waived": False,
+                "policy_priority_override": False,
+                "baseline_repositories_verified": 0,
+                "baseline_prs_verified": 0,
+                "errors": [f"Missing continuation manifest: {continuation_path}"],
+            }
+        manifest_data = json.loads(continuation_path.read_text(encoding="utf-8"))
+    elif isinstance(manifest_data, (str, Path)):
+        p = Path(manifest_data)
+        if not p.is_file():
+            return {
+                "status": "FAIL",
+                "admission_status": "missing",
+                "external_broker_waived": False,
+                "policy_priority_override": False,
+                "baseline_repositories_verified": 0,
+                "baseline_prs_verified": 0,
+                "errors": [f"Missing continuation manifest: {p}"],
+            }
+        manifest_data = json.loads(p.read_text(encoding="utf-8"))
+
+    errors = []
+    admission = manifest_data.get("native_admission", {})
+    adm_status = admission.get("admission_status")
+    broker_waived = bool(admission.get("external_broker_waived", False))
+    priority_override = bool(admission.get("policy_priority_override", False))
+
+    if adm_status != "admitted_operator_override":
+        errors.append(f"Invalid admission_status: expected 'admitted_operator_override', got '{adm_status}'")
+    if not broker_waived:
+        errors.append("external_broker_waived must be true")
+    if not priority_override:
+        errors.append("policy_priority_override must be true")
+
+    baseline = manifest_data.get("merged_trunk_baseline", {})
+    verified_repos = {}
+    total_prs = 0
+    for repo_name, expected_prs in REQUIRED_BASELINE_PRS.items():
+        repo_data = baseline.get(repo_name)
+        if not repo_data:
+            errors.append(f"Missing merged baseline record for repository: {repo_name}")
+            continue
+        merged_prs = tuple(repo_data.get("merged_prs", ()))
+        if merged_prs != expected_prs:
+            errors.append(
+                f"Merged PR mismatch for {repo_name}: expected {list(expected_prs)}, got {list(merged_prs)}"
+            )
+        else:
+            verified_repos[repo_name] = {
+                "full_name": repo_data.get("full_name"),
+                "merged_prs": list(merged_prs),
+                "baseline_status": repo_data.get("baseline_status"),
+            }
+            total_prs += len(merged_prs)
+
+    is_valid = len(errors) == 0
+    return {
+        "status": "PASS" if is_valid else "FAIL",
+        "execution_authorized": False,
+        "current_admission_status": "not_evaluated",
+        "evidence_scope": "historical_authorization_record",
+        "admission_status": adm_status,
+        "external_broker_waived": broker_waived,
+        "policy_priority_override": priority_override,
+        "baseline_repositories_verified": len(verified_repos),
+        "baseline_prs_verified": total_prs,
+        "details": {
+            "admission": admission,
+            "repositories": verified_repos,
+        },
+        "errors": errors,
+    }
+
+
+def audit_estate_wave_progression(manifest_data=None, source_led_data=None):
+    """Audit full estate cross-wave progression across 8 source-led works and 7 active repositories.
+
+    Guarantees 15/15 complete estate coverage without omissions.
+    """
+    errors = []
+
+    # 1. Resolve manifest_data (project-continuation.json)
+    if manifest_data is None:
+        p = REPOSITORY / "manifests" / "project-continuation.json"
+        if not p.is_file():
+            errors.append(f"Missing continuation manifest: {p}")
+            manifest_data = {}
+        else:
+            manifest_data = json.loads(p.read_text(encoding="utf-8"))
+    elif isinstance(manifest_data, (str, Path)):
+        p = Path(manifest_data)
+        if not p.is_file():
+            errors.append(f"Missing continuation manifest: {p}")
+            manifest_data = {}
+        else:
+            manifest_data = json.loads(p.read_text(encoding="utf-8"))
+
+    # 2. Resolve source_led_data (source-led-continuation-records.json)
+    if source_led_data is None:
+        p = REPOSITORY / "manifests" / "source-led-continuation-records.json"
+        if not p.is_file():
+            errors.append(f"Missing source-led records manifest: {p}")
+            source_led_data = {}
+        else:
+            source_led_data = json.loads(p.read_text(encoding="utf-8"))
+    elif isinstance(source_led_data, (str, Path)):
+        p = Path(source_led_data)
+        if not p.is_file():
+            errors.append(f"Missing source-led records manifest: {p}")
+            source_led_data = {}
+        else:
+            source_led_data = json.loads(p.read_text(encoding="utf-8"))
+
+    # 3. Check active repositories
+    baseline = manifest_data.get("merged_trunk_baseline", {})
+    wave_progressions = {}
+    found_active = []
+    for repo_name in EXPECTED_ACTIVE_REPOS:
+        repo_info = baseline.get(repo_name)
+        if not repo_info:
+            errors.append(f"Missing active repository from merged trunk baseline: {repo_name}")
+        else:
+            found_active.append(repo_name)
+            expected_prs = REQUIRED_BASELINE_PRS[repo_name]
+            if tuple(repo_info.get("merged_prs", ())) != expected_prs:
+                errors.append(
+                    f"Merged PR mismatch for {repo_name}: expected {list(expected_prs)}, "
+                    f"got {repo_info.get('merged_prs', [])}"
+                )
+            if repo_info.get("baseline_status") != "merged":
+                errors.append(f"Merged baseline status missing or invalid for {repo_name}")
+            wave_progressions[repo_name] = {
+                "type": "active_repository",
+                "full_name": repo_info.get("full_name"),
+                "merged_prs": repo_info.get("merged_prs", []),
+                "baseline_status": repo_info.get("baseline_status", "merged"),
+            }
+
+    # 4. Check source-led works
+    works = source_led_data.get("works", {})
+    found_source_led = []
+    for work_name in EXPECTED_SOURCE_LED_WORKS:
+        work_info = works.get(work_name)
+        if not work_info:
+            errors.append(f"Missing source-led work from continuation records: {work_name}")
+        else:
+            found_source_led.append(work_name)
+            wave_progressions[work_name] = {
+                "type": "source_led_work",
+                "stable_project_id": work_info.get("stable_project_id"),
+                "work_type": work_info.get("work_type"),
+                "binding_status": work_info.get("binding_status", "unbound"),
+            }
+
+    total_projects = len(found_active) + len(found_source_led)
+    coverage_complete = (len(errors) == 0) and (total_projects == 15) and (len(found_active) == 7) and (len(found_source_led) == 8)
+
+    return {
+        "status": "PASS" if coverage_complete else "FAIL",
+        "total_projects": total_projects,
+        "source_led_count": len(found_source_led),
+        "active_repo_count": len(found_active),
+        "wave_progressions": wave_progressions,
+        "coverage_complete": coverage_complete,
+        "errors": errors,
+    }
+
+
+def generate_estate_completion_seal(manifest_data=None, source_led_data=None) -> dict:
+    """Seal catalog coverage without promoting it into source-owner acceptance.
+
+    These inputs contain membership and historical merge records only. They cannot
+    evaluate the runtime, artistic, delivery or custody predicates owned by each
+    source. Preserve the legacy entry point and fail its completion verdict closed.
+    """
+    audit = audit_estate_wave_progression(manifest_data=manifest_data, source_led_data=source_led_data)
+    coverage_ready = bool(audit.get("coverage_complete", False) and not audit.get("errors"))
+
+    seal = {
+        "schema": "ace.estate_completion_seal.v1",
+        "ready": False,
+        "coverage_ready": coverage_ready,
+        "evidence_scope": "catalog_coverage",
+        "completion_status": "not_assessed",
+        "total_projects": audit.get("total_projects", 0),
+        "active_repos": audit.get("active_repo_count", 0),
+        "source_led_works": audit.get("source_led_count", 0),
+        "wave_progressions": audit.get("wave_progressions", {}),
+        "errors": [*audit.get("errors", []),
+                   "Estate readiness requires source-owner runtime, artistic, delivery and custody "
+                   "acceptance; this catalog audit does not evaluate those predicates."],
+    }
+
+    payload_to_hash = {k: v for k, v in seal.items() if k not in ("seal_digest", "digest")}
+    canonical_bytes = json.dumps(payload_to_hash, sort_keys=True).encode("utf-8")
+    seal_digest = hashlib.sha256(canonical_bytes).hexdigest()
+
+    seal["seal_digest"] = seal_digest
+    seal["digest"] = seal_digest
+    return seal
+
+
 def rendered_files(manifest):
     """Generate only the conservative public projection; local bindings stay ignored."""
     catalog = public_catalog(manifest)
@@ -101,10 +359,18 @@ def rendered_files(manifest):
     registry = catalog["identity_registry"]
     entities = {item["id"]: item for group, items in registry.items()
                 if isinstance(items, list) for item in items}
+    manifest_by_slug = {p["slug"]: p for p in manifest["projects"]}
     rows = []
     for project in catalog["projects"]:
         slug = project["slug"]
-        identity = project.get("identity_ref")
+        orig_project = manifest_by_slug.get(slug, project)
+        source_state = orig_project.get("source_state", project.get("source_state", "metadata-only"))
+        identity = project.get("identity_ref") or orig_project.get("identity_ref")
+        if identity:
+            ref_display = f"`{identity['type']}:{identity['id']}`"
+        else:
+            ref_display = "none (unresolved)"
+        boundary = BOUNDARIES.get(slug, "Public continuation boundary defined by owning repository or custody plan.")
         canonical = f"artworks/{identity['id']}" if identity and identity["type"] == "artwork" else f"projects/{slug}"
         links = []
         for key in project["repository_keys"]:
@@ -116,7 +382,10 @@ def rendered_files(manifest):
                 f"- Stable project ID: `{project['id']}`\n"
                 f"- Legacy project alias: `{slug}`\n"
                 f"- Record profile: `{project['profile']}`\n"
-                f"- Public implementation: {'; '.join(links) or 'not disclosed or not resolved'}\n")
+                f"- Source state: `{source_state}`\n"
+                f"- Identity / reference: {ref_display}\n"
+                f"- Public implementation: {'; '.join(links) or 'not disclosed or not resolved'}\n"
+                f"- Start Here / Continuation: {boundary}\n")
         if identity and identity["type"] == "artwork":
             body += (f"- Artwork ID: `{identity['id']}`\n"
                      f"- Publication status: `{entities[identity['id']]['publication_status']}`\n\n"
@@ -130,14 +399,27 @@ def rendered_files(manifest):
         else:
             files[f"projects/{slug}/README.md"] = body + "\nThis membership record is not asserted to be an artwork.\n"
         rows.append(f"| [{project['title']}](../{canonical}/README.md) | `{project['id']}` | "
-                    f"{project['profile']} | {'; '.join(links) or 'not disclosed or unresolved'} |")
+                    f"{project['profile']} | `{source_state}` | {ref_display} | "
+                    f"{'; '.join(links) or 'not disclosed or unresolved'} | {boundary} |")
     files["docs/project-catalog.md"] = (
         "# ACE project catalog\n\nGenerated public projection of 15 stable project records. "
         "Artistic titles and legacy project aliases identify works and membership records. "
         "Private source relationships, Page links and workstation bindings are excluded. "
         "Unverified publication status does not assert release acceptance.\n\n"
-        "| Work or project | Stable project ID | Record profile | Public implementation |\n"
-        "| --- | --- | --- | --- |\n" + "\n".join(rows) + "\n")
+        "## Start Here / Continuation Summary\n\n"
+        "- **Source-led works (T12)**: `backwards-up-hill`, `cycles`, `noonlight`, `nrcsvs`, `nvde`, `passing-thru`, and `wrvng-v` "
+        "represent source-media-led artworks and research vaults. Where local bindings are missing or page-record-only, custody preservation "
+        "and independent asset tracking govern continuation rather than code implementation.\n"
+        "- **Public implementations**: `god-here` (audiovisual-media-postproduction-system), `hole-loop` (timed-text-navigation-loop), "
+        "`mavsoleum-a` and `ogod` (generative-multimedia-spatial-environment), and `simvltanea` (independent-loop-compositor) possess active public implementation repositories.\n"
+        "- **Restricted implementations**: `danse` (deterministic-performance-engine) and `time-moment-brief` (synchronized-generation-playback) "
+        "remain in private repositories with independent custody and verification gates.\n"
+        "- **Admission and acceptance boundary**: The continuation manifest retains a historical authorization record; it "
+        "does not grant current execution authority. Current admission belongs to the native execution owner. "
+        "The merged-source ledger and catalog coverage do not establish runtime, artistic, delivery or custody acceptance. "
+        "The legacy completion-seal command reports coverage separately and exits nonzero while completion is unassessed.\n\n"
+        "| Work or project | Stable project ID | Record profile | Source state | Identity / reference | Public implementation | Start Here / Continuation |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n" + "\n".join(rows) + "\n")
     for group, keyfield in (("repositories", "key"), ("components", "slug"), ("archives", "slug")):
         for item in catalog[group]:
             legacy = item[keyfield]
@@ -363,7 +645,7 @@ def check_workspace(manifest, catalog_only=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("render", "check", "plan", "apply", "status"))
+    parser.add_argument("command", choices=("render", "check", "plan", "apply", "status", "audit-progression", "seal"))
     parser.add_argument("--catalog-only", action="store_true", help="CI: allow absent ignored workstation sources")
     args = parser.parse_args()
     if args.catalog_only and args.command != "check":
@@ -371,6 +653,18 @@ def main():
     manifest = load_manifest()
     if args.command == "status":
         print(json.dumps(source_status(manifest), indent=2))
+        return
+    if args.command == "audit-progression":
+        result = audit_estate_wave_progression()
+        print(json.dumps(result, indent=2))
+        if result["status"] != "PASS":
+            sys.exit(1)
+        return
+    if args.command == "seal":
+        result = generate_estate_completion_seal()
+        print(json.dumps(result, indent=2))
+        if not result["ready"]:
+            sys.exit(1)
         return
     files = rendered_files(manifest)
     paths = {relative: render_path(relative) for relative in files}
