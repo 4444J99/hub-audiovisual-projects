@@ -250,6 +250,20 @@ def validate_publication(manifest):
                 raise ValueError("Private module or composition relationship cannot be published")
 
 
+PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
+
+
+def validate_public_surface(paths):
+    """Reject hand-authored private-source pointer files in this public repository.
+
+    Manifest checks only see manifest relationships, so a Markdown pointer to a
+    private repository would bypass them. Private owners hold such pointers.
+    """
+    bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
+    if bad:
+        raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
+
+
 def validate_manifest(manifest):
     if manifest.get("schema_version") != "2.1.0":
         raise ValueError("Unsupported manifest contract")

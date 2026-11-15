@@ -3,6 +3,7 @@
 from copy import deepcopy
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import unittest
 
@@ -66,6 +67,20 @@ class IdentityContract(unittest.TestCase):
         repo["local_path"] = "new-private-source"
         with self.assertRaisesRegex(ValueError, "frozen published baseline"):
             identity.validate_manifest(self.manifest)
+
+    def test_private_pointer_files_rejected(self):
+        # Regression for closed PR 32: a hand-authored pointer to a private repository
+        # bypassed the manifest-only publication checks (AGENTS.md forbids private bindings).
+        for path in ("docs/private-pointers/study.md", "docs/private_pointer-x.md", "notes/Private-Pointers/a.md"):
+            with self.assertRaisesRegex(ValueError, "private owner"):
+                identity.validate_public_surface(["README.md", path])
+        identity.validate_public_surface(["docs/danse-private-custody.md", "docs/project-catalog.md"])
+
+    def test_tracked_files_contain_no_private_pointers(self):
+        tracked = subprocess.run(["git", "ls-files"], cwd=TOOLS.parent, check=True,
+                                 capture_output=True, text=True).stdout.splitlines()
+        self.assertTrue(tracked)
+        identity.validate_public_surface(tracked)
 
     def test_private_registry_source_rejected(self):
         source = self.manifest["identity_registry"]["source_media"][0]
