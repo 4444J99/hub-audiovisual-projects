@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-15T16:17:03Z",
+  "captured_at": "2026-11-15T16:29:16Z",
   "date": "2026-11-15",
   "name_only": [],
   "omitted_count": 2,
@@ -17,7 +17,8 @@
           "run_id": 43731832113,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Verify composition system"
+          "workflow": "Verify composition system",
+          "workflow_id": 380871665
         }
       ],
       "default_branch": "main",
@@ -131,7 +132,16 @@
           "title": "docs: audiovisual status 2026-11-15 corrections (dated sibling)"
         }
       ],
-      "open_prs": [],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "1da0fcadcb88",
+          "number": 44,
+          "resolved": true,
+          "title": "Generate status pages from live GitHub state (status_snapshot.py); regenerate 2026-11-15",
+          "updated_at": "2026-11-15T16:25:49Z"
+        }
+      ],
       "red_at_merge": [
         {
           "check": "Sourcery review",
@@ -149,17 +159,46 @@
     {
       "ci": [
         {
-          "conclusion": null,
+          "conclusion": "success",
+          "created_at": "2026-10-26T04:59:40Z",
+          "event": "dynamic",
+          "executed_steps": 5,
+          "head_sha": "03dffc72aedc",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 40271881902,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Graph Update: pip in /. #1653126371",
+          "workflow_id": 378076088
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-10-13T18:58:31Z",
+          "event": "push",
+          "executed_steps": 13,
+          "head_sha": "3746e3e480dd",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 38451100718,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Recovery integrity",
+          "workflow_id": 381538512
+        },
+        {
+          "conclusion": "success",
           "created_at": "2026-11-15T16:13:00Z",
           "event": "push",
-          "executed_steps": 5,
+          "executed_steps": 11,
           "head_sha": "5f0f2cb8e3c6",
           "jobs": 1,
           "on_current_head": true,
           "run_id": 43734211895,
-          "status": "in_progress",
-          "verdict": "pending",
-          "workflow": "Verify production system"
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Verify production system",
+          "workflow_id": 381538514
         }
       ],
       "default_branch": "main",
@@ -626,7 +665,7 @@
         {
           "check": "Combined checks and Python package",
           "conclusion": "success",
-          "executed_steps": 11,
+          "executed_steps": null,
           "head_sha": "ea621a7a2d29",
           "merged_at": "2026-11-14T00:13:41Z",
           "pr": 136,
@@ -646,7 +685,7 @@
         {
           "check": "Combined checks and Python package",
           "conclusion": "success",
-          "executed_steps": 11,
+          "executed_steps": null,
           "head_sha": "5c7ac507176f",
           "merged_at": "2026-11-14T00:23:05Z",
           "pr": 137,
@@ -676,7 +715,7 @@
         {
           "check": "Combined checks and Python package",
           "conclusion": "success",
-          "executed_steps": 11,
+          "executed_steps": null,
           "head_sha": "7130e88bb936",
           "merged_at": "2026-11-14T00:27:18Z",
           "pr": 138,
@@ -719,7 +758,8 @@
           "run_id": 43607441695,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "CodeQL"
+          "workflow": "CodeQL",
+          "workflow_id": 249107154
         },
         {
           "conclusion": "success",
@@ -732,7 +772,8 @@
           "run_id": 43607441754,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Public source verification"
+          "workflow": "Public source verification",
+          "workflow_id": 387195228
         },
         {
           "conclusion": "success",
@@ -745,7 +786,8 @@
           "run_id": 43607441645,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Release Drafter"
+          "workflow": "Release Drafter",
+          "workflow_id": 249107155
         },
         {
           "conclusion": "success",
@@ -758,7 +800,8 @@
           "run_id": 43607441677,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Secret Scan"
+          "workflow": "Secret Scan",
+          "workflow_id": 249107156
         },
         {
           "conclusion": "success",
@@ -771,7 +814,8 @@
           "run_id": 43658373569,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Stale Issue Detection"
+          "workflow": "Stale Issue Detection",
+          "workflow_id": 229421784
         },
         {
           "conclusion": "success",
@@ -784,72 +828,22 @@
           "run_id": 43607441707,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Stewardship Protocol"
+          "workflow": "Stewardship Protocol",
+          "workflow_id": 357154363
         },
         {
           "conclusion": "success",
-          "created_at": "2026-11-06T04:06:37Z",
-          "event": "dynamic",
-          "executed_steps": 5,
-          "head_sha": "cb2f6d670280",
+          "created_at": "2026-10-25T23:39:52Z",
+          "event": "push",
+          "executed_steps": 8,
+          "head_sha": "bae5c6d7e4d3",
           "jobs": 1,
           "on_current_head": false,
-          "run_id": 42160512362,
+          "run_id": 40245773989,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "github_actions in /. - Update #1684526254"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-13T04:06:08Z",
-          "event": "dynamic",
-          "executed_steps": 6,
-          "head_sha": "cb2f6d670280",
-          "jobs": 1,
-          "on_current_head": false,
-          "run_id": 43363277821,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "github_actions in /. - Update #1700286219"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-13T04:05:49Z",
-          "event": "dynamic",
-          "executed_steps": 6,
-          "head_sha": "cb2f6d670280",
-          "jobs": 1,
-          "on_current_head": false,
-          "run_id": 43363243371,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "npm_and_yarn in /, /absorb-alchemize/p5js-playground for eslint, html-validate, semver, vitest, @google/genai, marked, @types/node - Update #1700284958"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-06T04:06:19Z",
-          "event": "dynamic",
-          "executed_steps": 5,
-          "head_sha": "cb2f6d670280",
-          "jobs": 1,
-          "on_current_head": false,
-          "run_id": 42160482504,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "npm_and_yarn in /, /absorb-alchemize/p5js-playground for marked - Update #1684525313"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-14T14:56:18Z",
-          "event": "dynamic",
-          "executed_steps": 6,
-          "head_sha": "d9c4ed16539f",
-          "jobs": 1,
-          "on_current_head": true,
-          "run_id": 43607450081,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "npm_and_yarn in /. for follow-redirects, minimatch - Update #1704476592"
+          "workflow": "Validate ACE boundaries",
+          "workflow_id": 383561621
         },
         {
           "conclusion": "success",
@@ -862,33 +856,8 @@
           "run_id": 43607450233,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "npm_and_yarn in /. for follow-redirects, minimatch - Update #1704476594"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-06T04:06:18Z",
-          "event": "dynamic",
-          "executed_steps": 5,
-          "head_sha": "cb2f6d670280",
-          "jobs": 1,
-          "on_current_head": false,
-          "run_id": 42160480984,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "npm_and_yarn in /., /absorb-alchemize/audio-orb, /absorb-alchemize/gemini-ink-studio, /absorb-alchemize/p5js-playground, /absorb-alchemize/synthwave-space - Update #1684525245"
-        },
-        {
-          "conclusion": "success",
-          "created_at": "2026-11-13T04:05:48Z",
-          "event": "dynamic",
-          "executed_steps": 6,
-          "head_sha": "cb2f6d670280",
-          "jobs": 1,
-          "on_current_head": false,
-          "run_id": 43363240580,
-          "status": "completed",
-          "verdict": "pass",
-          "workflow": "npm_and_yarn in /., /absorb-alchemize/audio-orb, /absorb-alchemize/gemini-ink-studio, /absorb-alchemize/p5js-playground, /absorb-alchemize/synthwave-space - Update #1700284870"
+          "workflow": "npm_and_yarn in /. for follow-redirects, minimatch - Update #1704476594",
+          "workflow_id": 207424590
         },
         {
           "conclusion": "success",
@@ -901,7 +870,8 @@
           "run_id": 43607440361,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "pages build and deployment"
+          "workflow": "pages build and deployment",
+          "workflow_id": 234406701
         },
         {
           "conclusion": "success",
@@ -914,7 +884,8 @@
           "run_id": 43607441738,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "validate-dependencies"
+          "workflow": "validate-dependencies",
+          "workflow_id": 360119118
         }
       ],
       "default_branch": "main",
@@ -965,7 +936,8 @@
           "run_id": 43732736875,
           "status": "in_progress",
           "verdict": "pending",
-          "workflow": "CI Verification"
+          "workflow": "CI Verification",
+          "workflow_id": 355108794
         },
         {
           "conclusion": "skipped",
@@ -978,7 +950,8 @@
           "run_id": 43734758361,
           "status": "completed",
           "verdict": "skipped",
-          "workflow": "Current State Projection"
+          "workflow": "Current State Projection",
+          "workflow_id": 374172715
         },
         {
           "conclusion": "success",
@@ -991,7 +964,8 @@
           "run_id": 43732736917,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Package Verification"
+          "workflow": "Package Verification",
+          "workflow_id": 374100086
         },
         {
           "conclusion": "failure",
@@ -1004,7 +978,8 @@
           "run_id": 43732736912,
           "status": "completed",
           "verdict": "red",
-          "workflow": "macOS WebKit playback"
+          "workflow": "macOS WebKit playback",
+          "workflow_id": 410723795
         }
       ],
       "default_branch": "main",
@@ -1292,7 +1267,7 @@
         {
           "check": "test",
           "conclusion": "success",
-          "executed_steps": 26,
+          "executed_steps": null,
           "head_sha": "8b4fdcbda6c8",
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
@@ -1302,7 +1277,7 @@
         {
           "check": "wheel-smoke",
           "conclusion": "success",
-          "executed_steps": 11,
+          "executed_steps": null,
           "head_sha": "8b4fdcbda6c8",
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
@@ -1372,7 +1347,7 @@
         {
           "check": "wheel-smoke",
           "conclusion": "success",
-          "executed_steps": 11,
+          "executed_steps": null,
           "head_sha": "3cd0009b40ad",
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
@@ -1455,7 +1430,8 @@
           "run_id": 43728983970,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Publish historical edition"
+          "workflow": "Publish historical edition",
+          "workflow_id": 378203161
         },
         {
           "conclusion": "success",
@@ -1468,7 +1444,8 @@
           "run_id": 40188480208,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Validate ACE boundaries"
+          "workflow": "Validate ACE boundaries",
+          "workflow_id": 383561624
         },
         {
           "conclusion": "success",
@@ -1481,7 +1458,8 @@
           "run_id": 43728892350,
           "status": "completed",
           "verdict": "pass",
-          "workflow": "Verify historical edition"
+          "workflow": "Verify historical edition",
+          "workflow_id": 377877480
         }
       ],
       "default_branch": "main",
@@ -1630,11 +1608,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "6b0163e3d020",
+          "head_sha": "86921864850e",
           "number": 90,
           "resolved": true,
           "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2",
-          "updated_at": "2026-11-15T16:18:24Z"
+          "updated_at": "2026-11-15T16:29:57Z"
         }
       ],
       "red_at_merge": [],

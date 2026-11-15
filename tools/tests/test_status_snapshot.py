@@ -2,6 +2,7 @@ import copy
 import importlib.util
 import io
 import json
+import sys
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 import tempfile
@@ -11,11 +12,13 @@ TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 
 
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
+
+
 def load(name):
     spec = importlib.util.spec_from_file_location(name, TOOLS / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
-    import sys
-    sys.path.insert(0, str(TOOLS))
     spec.loader.exec_module(module)
     return module
 
@@ -71,6 +74,7 @@ class VerdictTests(unittest.TestCase):
         self.assertEqual(status.verdict("completed", "failure", 0), "cannot-start")
         self.assertEqual(status.verdict("completed", "success", 0), "no-steps")
         self.assertEqual(status.verdict("completed", "skipped", 0), "skipped")
+        self.assertEqual(status.verdict("completed", "cancelled", 0), "cancelled")
         for conclusion in ("success", "failure", "cancelled", None):
             self.assertNotEqual(status.verdict("completed", conclusion, 0), "pass")
 
@@ -134,12 +138,18 @@ class RenderTests(unittest.TestCase):
         snap["repositories"][0]["red_at_merge"] = []
         self.assertIn("No merged pull request in this window had a red", status.render(snap, manifest()))
 
-    def test_restricted_name_in_a_title_is_redacted(self):
+    def test_collector_redaction_and_renderer_gate_for_restricted_names(self):
+        self.assertEqual(status.redact("Wire hidden-thing into ORG/hidden-thing", {"hidden-thing"}),
+                         "Wire (restricted repository) into ORG/(restricted repository)")
+        self.assertEqual(status.redact("ok  text", set()), "ok text")
         snap = snapshot()
-        snap["repositories"][0]["merged_prs"][0]["title"] = "Wire hidden-thing into 4444J" "99/hidden-thing"
-        page = status.render(snap, manifest())
-        self.assertNotIn("hidden-thing", page)
-        self.assertIn("(restricted repository)", page)
+        snap["repositories"][0]["merged_prs"][0]["title"] = "Wire hidden-thing"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_markdown_metacharacters_are_escaped(self):
+        self.assertEqual(status.clean("a & b <i> @user *x* _y_ #1 ~z~ [l](u) |"),
+                         "a &amp; b &lt;i&gt; &#64;user \\*x\\* \\_y\\_ \\#1 \\~z\\~ \\[l\\](u) \\|")
 
     def test_full_pin_in_a_title_is_shortened(self):
         snap = snapshot()
@@ -147,25 +157,45 @@ class RenderTests(unittest.TestCase):
         page = status.render(snap, manifest())
         self.assertNotIn("ab" * 20, page)
 
-    def test_name_only_without_manifest_mark_is_not_listed(self):
+    def test_name_only_listing_follows_the_snapshot_and_manifest_marks(self):
         snap = snapshot()
         snap["name_only"] = []
         self.assertNotIn("named-thing", status.render(snap, manifest()))
+        self.assertIn("named-thing", status.render(snapshot(), manifest()))
+        unmarked = manifest()
+        del unmarked["repositories"][2]["status_listing"]
+        with self.assertRaises(status.StatusError):
+            status.render(snapshot(), unmarked)
 
 
 class NameOnlyTests(unittest.TestCase):
-    def test_name_only_mark_exempts_only_that_name_from_the_surface_check(self):
+    def test_exemption_is_opt_in_and_names_only_the_marked_repository(self):
         m = manifest()
-        self.assertNotIn("named-thing", identity.private_repository_names(m))
-        self.assertNotIn("4444J" "99/named-thing", identity.private_qualified_origins(m))
-        self.assertIn("hidden-thing", identity.private_repository_names(m))
-        self.assertIn("4444J" "99/hidden-thing", identity.private_qualified_origins(m))
+        self.assertIn("named-thing", identity.private_repository_names(m))
+        self.assertNotIn("named-thing", identity.private_repository_names(m, allow_listed=True))
+        self.assertNotIn("4444J" "99/named-thing", identity.private_qualified_origins(m, allow_listed=True))
+        self.assertIn("hidden-thing", identity.private_repository_names(m, allow_listed=True))
+        self.assertIn("4444J" "99/hidden-thing", identity.private_qualified_origins(m, allow_listed=True))
 
-    def test_unmarked_restricted_repository_still_fails_the_validator(self):
+    def test_only_generated_status_pages_may_name_a_marked_repository(self):
         m = manifest()
+        read = lambda p: "see named-thing"  # noqa: E731
+        identity.validate_public_surface(["docs/status/2026-11-15.md"], read, {}, m)
         with self.assertRaises(ValueError):
-            identity.validate_public_surface(["docs/x.md"], lambda p: "see hidden-thing", {}, m)
-        identity.validate_public_surface(["docs/x.md"], lambda p: "see named-thing", {}, m)
+            identity.validate_public_surface(["docs/other.md"], read, {}, m)
+        with self.assertRaises(ValueError):
+            identity.validate_public_surface(["docs/status/x.md"], lambda p: "see hidden-thing", {}, m)
+
+    def test_mark_is_accepted_by_the_real_manifest_contract_and_bad_values_are_not(self):
+        real = json.loads((ROOT / "workspace-manifest.json").read_text())
+        identity.validate_manifest(real)
+        marked = copy.deepcopy(real)
+        next(r for r in marked["repositories"] if r["private"])["status_listing"] = "name-only"
+        identity.validate_manifest(marked)
+        marked_bad = copy.deepcopy(real)
+        next(r for r in marked_bad["repositories"] if r["private"])["status_listing"] = "full"
+        with self.assertRaises(ValueError):
+            identity.validate_manifest(marked_bad)
 
 
 class RefusalTests(unittest.TestCase):
@@ -200,6 +230,20 @@ class RefusalTests(unittest.TestCase):
             s["repositories"][0]["ci"][0]["on_current_head"] = False
         self.assertRefused(lie)
 
+    def test_red_at_merge_must_match_the_cited_pull_request(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        self.assertRefused(lambda s: repo(s)["red_at_merge"][0].update(head_sha=sha(9)))
+        self.assertRefused(lambda s: repo(s)["red_at_merge"][0].update(merged_at="2020-01-01T00:00:00Z"))
+        self.assertRefused(lambda s: repo(s)["red_at_merge"][0].update(run_id="55"))
+
+    def test_malformed_fields_refuse_instead_of_crashing(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        self.assertRefused(lambda s: repo(s)["ci"][0].update(run_id="100"))
+        self.assertRefused(lambda s: repo(s)["ci"][0].update(status=None))
+        self.assertRefused(lambda s: s.update(name_only=[5]))
+        self.assertRefused(lambda s: s.update(omitted_count="1"))
+        self.assertRefused(lambda s: s.pop("captured_at"))
+
     def test_run_verdict_cannot_contradict_steps(self):
         def lie(s):
             s["repositories"][0]["ci"][1]["verdict"] = "pass"
@@ -228,7 +272,11 @@ class TrackingTests(unittest.TestCase):
 class FakeGh:
     """Answers the gh calls collect_repo makes from fixed data and records every call."""
 
-    def __init__(self, private=False, bad_merge=False, truncate=False):
+    def __init__(self, private=False, bad_merge=False, truncate=False, empty_message=False, many_checks=False,
+                 many_jobs=False):
+        self.empty_message = empty_message
+        self.many_checks = many_checks
+        self.many_jobs = many_jobs
         self.calls = []
         self.private = private
         self.bad_merge = bad_merge
@@ -243,26 +291,30 @@ class FakeGh:
             if path == "repos/o/r":
                 return {"private": self.private, "visibility": "private" if self.private else "public", "default_branch": "main"}
             if path == "repos/o/r/commits/main":
-                return {"sha": full(1), "commit": {"message": "head subject\n\nbody", "committer": {"date": "2026-11-15T10:00:00Z"}}}
+                return {"sha": full(1), "commit": {"message": "" if self.empty_message else "head subject\n\nbody", "committer": {"date": "2026-11-15T10:00:00Z"}}}
             if path == "repos/o/r/commits/%s/pulls" % full(1):
                 return [{"number": 12, "merged_at": "2026-11-15T10:00:00Z", "merge_commit_sha": full(1)}]
             if path.startswith("repos/o/r/compare/"):
                 return {"status": "diverged" if self.bad_merge else "ahead"}
             if path.startswith("repos/o/r/actions/runs?"):
                 return {"workflow_runs": [
-                    {"id": 100, "name": "Verify", "status": "completed", "conclusion": "success", "event": "push",
+                    {"id": 100, "workflow_id": 1, "name": "Verify", "status": "completed", "conclusion": "success", "event": "push",
                      "created_at": "2026-11-15T12:00:00Z", "head_sha": full(1)},
-                    {"id": 90, "name": "Verify", "status": "completed", "conclusion": "failure", "event": "push",
+                    {"id": 90, "workflow_id": 1, "name": "Verify", "status": "completed", "conclusion": "failure", "event": "push",
                      "created_at": "2026-11-14T12:00:00Z", "head_sha": full(9)},
-                    {"id": 101, "name": "Dead", "status": "completed", "conclusion": "failure", "event": "push",
-                     "created_at": "2026-11-15T12:30:00Z", "head_sha": full(1)}]}
+                    {"id": 101, "workflow_id": 2, "name": "Dead", "status": "completed", "conclusion": "failure",
+                     "event": "push", "created_at": "2026-11-15T12:30:00Z", "head_sha": full(1)},
+                    {"id": 102, "workflow_id": 3, "name": "Verify", "status": "completed", "conclusion": "cancelled",
+                     "event": "push", "created_at": "2026-11-15T12:40:00Z", "head_sha": full(1)}]}
             if path == "repos/o/r/actions/runs/100/jobs?per_page=100":
                 return {"jobs": [{"steps": [{"status": "completed", "conclusion": "success"},
                                              {"status": "completed", "conclusion": "skipped"}]}]}
             if path == "repos/o/r/actions/runs/101/jobs?per_page=100":
                 return {"jobs": [{"steps": []}]}
+            if path == "repos/o/r/actions/runs/102/jobs?per_page=100":
+                return {"jobs": [{"steps": []}], "total_count": 2 if self.many_jobs else 1}
             if path == "repos/o/r/commits/%s/check-runs?per_page=100" % full(4):
-                return {"check_runs": [
+                return {"total_count": 101 if self.many_checks else 5, "check_runs": [
                     {"id": 1, "name": "test", "status": "completed", "conclusion": "failure",
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/55/job/66"},
                     {"id": 2, "name": "startup", "status": "completed", "conclusion": "failure",
@@ -277,8 +329,6 @@ class FakeGh:
                 return {"steps": [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "failure"}]}
             if path == "repos/o/r/actions/jobs/67":
                 return {"steps": []}
-            if path == "repos/o/r/actions/jobs/69":
-                return {"steps": [{"status": "completed", "conclusion": "success"}]}
         if args[:2] == ("pr", "list"):
             if "merged" in args:
                 count = status.LIST_LIMIT if self.truncate else 1
@@ -302,12 +352,16 @@ class CollectTests(unittest.TestCase):
                                         "pr": 12, "resolved": True})
         self.assertEqual(repo["merged_prs"][0]["merge_sha"], sha(1))
         self.assertTrue(all(len(p["merge_sha"]) == status.SHA_LEN for p in repo["merged_prs"]))
-        ci = {r["workflow"]: r for r in repo["ci"]}
+        ci = {r["workflow"]: r for r in repo["ci"] if r["workflow_id"] != 3}
         self.assertEqual(ci["Verify"]["run_id"], 100)
         self.assertEqual(ci["Verify"]["executed_steps"], 1)
         self.assertEqual(ci["Verify"]["verdict"], "pass")
         self.assertTrue(ci["Verify"]["on_current_head"])
         self.assertEqual(ci["Dead"]["verdict"], "cannot-start")
+        by_id = {r["workflow_id"]: r for r in repo["ci"]}
+        self.assertEqual(len(repo["ci"]), 3, "workflows sharing a display name stay separate")
+        self.assertEqual(by_id[3]["verdict"], "cancelled")
+        self.assertFalse([c for c in gh.calls if c[1].endswith("/jobs/69")], "passing checks do not fetch jobs")
         states = {e["check"]: (e["state"], e["executed_steps"], e["run_id"]) for e in repo["red_at_merge"]}
         self.assertEqual(states, {"test": ("red", 2, 55), "startup": ("cannot-start", 0, 56),
                                   "pages": ("red", None, None), "late": ("pending", None, 57)})
@@ -324,9 +378,33 @@ class CollectTests(unittest.TestCase):
         with self.assertRaises(status.StatusError):
             status.collect_repo(FakeGh(private=True), "o/r", "2026-11-13")
 
+    def test_empty_commit_message_is_tolerated(self):
+        repo = status.collect_repo(FakeGh(empty_message=True), "o/r", "2026-11-13")
+        self.assertEqual(repo["main"]["title"], "")
+
+    def test_overflowing_check_runs_and_jobs_are_refused(self):
+        with self.assertRaises(status.StatusError):
+            status.collect_repo(FakeGh(many_checks=True), "o/r", "2026-11-13")
+        with self.assertRaises(status.StatusError):
+            status.collect_repo(FakeGh(many_jobs=True), "o/r", "2026-11-13")
+
     def test_truncated_list_is_refused(self):
         with self.assertRaises(status.StatusError):
             status.collect_repo(FakeGh(truncate=True), "o/r", "2026-11-13")
+
+    def test_collect_snapshot_visits_only_listed_repositories_and_redacts(self):
+        seen = []
+        original = status.collect_repo
+
+        def spy(gh, repo, since, restricted=()):
+            seen.append((repo, sorted(restricted)))
+            return {"full_name": repo}
+        status.collect_repo = spy
+        self.addCleanup(setattr, status, "collect_repo", original)
+        snap = status.collect_snapshot(manifest(), "2026-11-13", "2026-11-15", "t", gh=None)
+        self.assertEqual([r for r, _ in seen], [status.HUB, "4444J" "99/alpha-public"])
+        self.assertIn("hidden-thing", seen[0][1])
+        self.assertEqual((snap["name_only"], snap["omitted_count"]), (["4444J" "99/named-thing"], 1))
 
     def test_omitted_repository_is_never_collected(self):
         full, _, _ = status.tracked_repositories(manifest())
@@ -391,7 +469,8 @@ class CommittedPageTests(unittest.TestCase):
 
     def test_committed_pages_pass_the_public_surface_validator(self):
         repo_manifest = json.loads((ROOT / "workspace-manifest.json").read_text())
-        paths = [str(p.relative_to(ROOT)) for p in (ROOT / "docs" / "status").iterdir()]
+        paths = [str(p.relative_to(ROOT)) for p in (ROOT / "docs" / "status").iterdir()
+                 if p.is_file() and p.suffix in (".md", ".json")]
         identity.validate_public_surface(paths, lambda p: (ROOT / p).read_text(), {}, repo_manifest)
 
     def test_status_documentation_states_pages_are_generated(self):

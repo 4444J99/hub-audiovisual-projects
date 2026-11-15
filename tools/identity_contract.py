@@ -45,7 +45,7 @@ PRIVATE_SOFTWARE = {
 # reviewed publication-contract migration, never part of rendering or discovery.
 LEGACY_PRIVATE_SHA256 = "8b8d00ca7e0df9dcbdb006c146e49e4e75f304c81c8dd2cf2aa46161ff9bbf70"
 LEGACY_PRIVATE_IDS = {1408128309, 1320324017}
-REPOSITORY_ADDITIONS = {"directory_slug", "software_ref"}
+REPOSITORY_ADDITIONS = {"directory_slug", "software_ref", "status_listing"}
 PROJECT_ADDITIONS = {"identity_ref"}
 
 
@@ -214,6 +214,9 @@ def validate_publication(manifest):
     for repo in manifest["repositories"]:
         if type(repo.get("private")) is not bool:
             raise ValueError("Repository privacy must be explicit")
+    for repo in manifest["repositories"]:
+        if repo.get("status_listing") not in (None, "name-only"):
+            raise ValueError("status_listing must be absent or name-only")
     private = [r for r in manifest["repositories"] if r["private"]]
     if {r["github_id"] for r in private} != LEGACY_PRIVATE_IDS:
         raise ValueError("New or changed private repository relationship requires a publication review")
@@ -254,6 +257,7 @@ PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", 
 OWNER_REF = re.compile(r"(?:github\.com[/:])?\b(?:4444j99|organvm)/([a-z0-9._-]+?)(?:\.git)?(?![a-z0-9_-])")
 PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444j99/([a-z0-9._-]+)/commit/[0-9a-f]{7,40}")
 COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
+STATUS_PAGE_PREFIX = "docs/status/"
 PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
 
@@ -295,19 +299,20 @@ def name_listed(repo):
     return repo["private"] and repo.get("status_listing") == "name-only"
 
 
-def private_repository_names(manifest):
+def private_repository_names(manifest, allow_listed=False):
+    """Restricted names; ``allow_listed`` drops names the manifest marks name-only (generated status pages only)."""
     names = set()
     for repo in manifest["repositories"]:
-        if repo["private"] and not name_listed(repo):
+        if repo["private"] and not (allow_listed and name_listed(repo)):
             names |= _repository_names(repo, navigation=False)
     return names - public_repository_names(manifest)
 
 
-def private_qualified_origins(manifest):
+def private_qualified_origins(manifest, allow_listed=False):
     """Owner-qualified private identities, which stay private even when a public remote shares the basename."""
     found = set()
     for repo in manifest["repositories"]:
-        if repo["private"] and not name_listed(repo):
+        if repo["private"] and not (allow_listed and name_listed(repo)):
             found.add(repo["full_name"])
             origin = repo.get("configured_origin")
             if origin:
@@ -374,11 +379,13 @@ def validate_public_surface(paths, read, baseline, manifest):
     if bad:
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
     public = public_repository_names(manifest)
-    private = private_repository_names(manifest)
-    qualified = private_qualified_origins(manifest)
     for path in paths:
         if not in_surface_scope(path):
             continue
+        # Only generated status pages may name a repository the manifest marks name-only.
+        listed = path.startswith(STATUS_PAGE_PREFIX)
+        private = private_repository_names(manifest, allow_listed=listed)
+        qualified = private_qualified_origins(manifest, allow_listed=listed)
         text = read(path)
         if path in baseline:
             if content_digest(text) != baseline[path]:
