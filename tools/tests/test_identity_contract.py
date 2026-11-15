@@ -91,15 +91,19 @@ class IdentityContract(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "private owner"):
                     self.surface({path: text})
 
-    def test_baseline_document_cannot_gain_a_new_binding(self):
+    def test_baseline_document_is_frozen_by_content(self):
         old = "private repository 4444J99/old-owner at %s" % self.SHA
-        base = {"README.md": identity.surface_facts(old, identity.public_repository_names(self.manifest),
-                                                   identity.private_repository_names(self.manifest))}
+        base = {"README.md": identity.content_digest(old)}
         self.surface({"README.md": old}, base)
         for added in ("\nprivate repository 4444J99/new-owner",
-                      "\nprivate pin fedcba9876543210fedcba9876543210fedcba98"):
+                      "\nprivate pin fedcba9876543210fedcba9876543210fedcba98",
+                      "\nrepository 4444J99/old-owner at %s asset media/unreviewed-take-42.wav" % self.SHA):
             with self.assertRaisesRegex(ValueError, "private owner"):
                 self.surface({"README.md": old + added}, base)
+
+    def test_public_commit_url_is_not_a_private_pin(self):
+        text = "private custody note; review at https://github.com/4444J99/hub-audiovisual-projects/commit/%s" % self.SHA
+        self.surface({"docs/new-evidence.md": text})
 
     def test_public_names_aliases_and_public_remotes_allowed(self):
         for ref in ("4444J99/tool-audiovisual-postproduction/pull/1", "4444J99/hub-audiovisual-projects",

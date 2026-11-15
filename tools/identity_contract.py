@@ -253,6 +253,7 @@ def validate_publication(manifest):
 PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
 SURFACE_SUFFIXES = (".md", ".json", ".txt", ".yml", ".yaml")
 OWNER_REF = re.compile(r"(?:github\.com[/:])?\b4444J99/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
+PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444J99/([A-Za-z0-9._-]+)/commit/[0-9a-f]{7,40}")
 COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
 PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
@@ -299,8 +300,14 @@ def surface_facts(text, public, private=frozenset()):
     for name in private:
         if re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(name) + r"(?![A-Za-z0-9_-])", text):
             refs.add(name)
+    # Commit URLs of explicitly public repositories are public review evidence, not private pins.
+    text = PUBLIC_COMMIT_URL.sub(lambda m: "" if m.group(1) in public else m.group(0), text)
     commits = sorted(set(COMMIT.findall(text))) if refs or re.search(r"private", text, re.IGNORECASE) else []
     return {"refs": sorted(refs), "commits": commits}
+
+
+def content_digest(text):
+    return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
 
 
 def validate_public_surface(paths, read, baseline, manifest):
@@ -308,9 +315,11 @@ def validate_public_surface(paths, read, baseline, manifest):
 
     Manifest checks only see manifest relationships, so a document naming a private
     repository would bypass them. Pointers live in the private owner. Every in-scope
-    document is inspected by content under any filename; ``baseline`` maps path to the
-    previously reviewed ``surface_facts`` and only those exact facts are tolerated, so
-    appending a new binding to an existing document is rejected.
+    document is inspected by content under any filename. ``baseline`` maps the few
+    documents that already carried reviewed source bindings to the SHA-256 of their
+    reviewed content: any edit to such a document (new binding, new internal path)
+    fails until the baseline entry is re-reviewed. All other documents may carry no
+    source bindings at all.
     """
     bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
     if bad:
@@ -320,12 +329,17 @@ def validate_public_surface(paths, read, baseline, manifest):
     for path in paths:
         if not in_surface_scope(path):
             continue
-        facts = surface_facts(read(path), public, private)
-        reviewed = baseline.get(path, {"refs": [], "commits": []})
-        new = [x for kind in ("refs", "commits") for x in facts[kind] if x not in reviewed[kind]]
-        if new:
+        text = read(path)
+        if path in baseline:
+            if content_digest(text) != baseline[path]:
+                raise ValueError("Private source pointers belong in their private owner: reviewed document %s "
+                                 "changed; re-review its source bindings and update the baseline digest" % path)
+            continue
+        facts = surface_facts(text, public, private)
+        found = facts["refs"] + facts["commits"]
+        if found:
             raise ValueError("Private source pointers belong in their private owner: %s adds source binding %s"
-                             % (path, new[0]))
+                             % (path, found[0]))
 
 
 def validate_manifest(manifest):
