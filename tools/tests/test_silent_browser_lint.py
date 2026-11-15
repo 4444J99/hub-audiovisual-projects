@@ -16,14 +16,14 @@ SKIP_DIRS = {'.git', 'node_modules', '.venv', 'venv', '__pycache__'}
 EXEMPT = {'tools/silent_browser.cjs', 'tools/tests/test_silent_browser.cjs',
           'tools/tests/test_silent_browser_lint.py'}
 # Historical receipts are preserved byte for byte and never run (the accepted receipt pins the verifier digest).
-HISTORICAL = 'docs/evidence/'
+HISTORICAL = 'docs/evidence/2026-10-10-tmb-spatial-composition-v3/historical-verifier.cjs'
 def files(suffixes):
     for path in sorted(ROOT.rglob('*')):
         parts = set(path.relative_to(ROOT).parts)
         if parts & SKIP_DIRS or not path.is_file() or path.suffix not in suffixes:
             continue
         relative = path.relative_to(ROOT).as_posix()
-        if relative not in EXEMPT and not relative.startswith(HISTORICAL):
+        if relative not in EXEMPT and relative != HISTORICAL:
             yield path, relative
 
 
@@ -37,6 +37,7 @@ JS_DESTRUCTURED = re.compile(rf"\{{[^}}]*\b(?:{NAMES})\b[^}}]*\}}\s*=\s*[\w$.\]\
 # A Playwright engine under another name: const runner = chromium; const {chromium: runner} = require('playwright');
 JS_ALIAS_ASSIGN = re.compile(r"([\w$]+)\s*=\s*(?:[\w$.()'\"\[\]]*?\.)?(?:chromium|webkit|firefox)\b(?!\s*\.\s*launch)")
 JS_ALIAS_DESTRUCTURE = re.compile(r"\b(?:chromium|webkit|firefox)\s*:\s*([\w$]+)")
+JS_ALIAS_IMPORT = re.compile(r"\b(?:chromium|webkit|firefox)\s+as\s+([\w$]+)")  # import {chromium as chrome} from 'playwright'
 # Names such as ``engine`` are Playwright browser types only in a file that deals with a browser driver; application code
 # has its own ``engine.launch(...)``.
 DRIVER_FILE = re.compile(r"playwright|puppeteer|chromium|firefox|browserType|browser_type|\bwebkit\s*[.,)]", re.I)
@@ -72,7 +73,7 @@ def _blank_comments(source: str) -> str:
 def node_launches(source: str):
     code = _blank_comments(source)
     driver = bool(DRIVER_FILE.search(code))
-    names = set(ENGINE_NAMES if driver else PLAYWRIGHT_ENGINES) | {m.group(1) for m in JS_ALIAS_ASSIGN.finditer(code)} | {m.group(1) for m in JS_ALIAS_DESTRUCTURE.finditer(code)}
+    names = set(ENGINE_NAMES if driver else PLAYWRIGHT_ENGINES) | {m.group(1) for m in JS_ALIAS_ASSIGN.finditer(code)} | {m.group(1) for m in JS_ALIAS_DESTRUCTURE.finditer(code)} | {m.group(1) for m in JS_ALIAS_IMPORT.finditer(code)}
     found = set()
     for match in JS_CALL.finditer(code):
         owner = match.group('owner') or match.group('owner2')
@@ -112,6 +113,7 @@ class SilentLaunchLintTests(unittest.TestCase):
         self.assertEqual(node_launches("await playwright[kind].launch();\n"), [1])
         self.assertEqual(node_launches("await chromium['launch']();\n"), [1])
         self.assertEqual(node_launches("const {launch} = chromium;\nawait launch();\n"), [1])
+        self.assertEqual(node_launches("import { chromium as chrome } from 'playwright';\nawait chrome.launch();\n"), [2])
         self.assertEqual(node_launches('/* webkit.launch() */ const x = 1;\n'), [])
         self.assertEqual(node_launches('await engine.launch(id);\n'), [])
         self.assertEqual(python_launches('p.chromium.launch()\n', 'x.py'), [1])
@@ -126,9 +128,8 @@ class SilentLaunchLintTests(unittest.TestCase):
     def test_the_helper_is_the_only_launcher_and_history_is_the_only_exemption(self):
         helper = (ROOT / 'tools/silent_browser.cjs').read_text(encoding='utf-8')
         self.assertEqual(len(re.findall(r'engine\.launch(?:PersistentContext)?\(', helper)), 2)
-        historical = [relative for path in sorted((ROOT / HISTORICAL).rglob('*')) if path.suffix in {'.js', '.mjs', '.cjs'}
-                      for relative in [path.relative_to(ROOT).as_posix()] if node_launches(path.read_text(encoding='utf-8', errors='replace'))]
-        self.assertEqual(historical, ['docs/evidence/2026-10-10-tmb-spatial-composition-v3/historical-verifier.cjs'])
+        self.assertTrue(node_launches((ROOT / HISTORICAL).read_text(encoding='utf-8')), 'the one exemption is a preserved file that does launch bare')
+        self.assertTrue((ROOT / HISTORICAL).is_file())
 
 
 if __name__ == '__main__':
