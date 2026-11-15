@@ -28,5 +28,12 @@ jobs:
         run: python3 tools/verify_repository_access.py --github
       - name: Verify preservation and naming rules
         run: python3 -m unittest discover -s tools/tests -v
-      - name: Verify composition acceptance guards
-        run: node --test tools/tests/test_verify_tmb_composition.cjs
+      - name: Install Playwright Chromium for the silent-launch page proof
+        run: |
+          npm install --prefix "$RUNNER_TEMP/silent-pw" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.57.0
+          node "$RUNNER_TEMP/silent-pw/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify composition acceptance guards and silent browser launches
+        env:
+          NODE_PATH: ${{ runner.temp }}/silent-pw/node_modules
+          SILENT_BROWSER_REQUIRE_PAGE: "1"
+        run: node --test tools/tests/test_verify_tmb_composition.cjs tools/tests/test_silent_browser.cjs

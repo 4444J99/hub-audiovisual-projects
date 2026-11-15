@@ -1,0 +1,8 @@
+# Silent browsers
+
+No check in this repository may produce audible sound on the host. The one browser check, `tools/verify_tmb_composition.cjs`, launches Chrome through `tools/silent_browser.cjs` (`silentLaunch`).
+
+- Chromium gets `--mute-audio` merged into the caller's own arguments.
+- Every context (`newContext`, and `newPage`, which makes its own) gets `tools/silent-init.js`. It pins audio and video elements to native `muted = true` and `volume = 0` while the page still reads back what it set, routes every connection to a realtime `AudioContext` destination through a gain-0 sink, leaves `OfflineAudioContext` on its real destination, and speaks `speechSynthesis` utterances at volume 0. An element routed through `createMediaElementSource` is released from the pin (a muted element would feed silence to the analysers) and silenced in the graph instead.
+- `tools/tests/test_silent_browser.cjs` proves the contract with silent fixtures; `tools/tests/test_silent_browser_lint.py` fails on any launch that bypasses the helper.
+- `tools/verify_tmb_composition.cjs` was preserved without edits by layout 2.0.0. This is the one reviewed edit since: its `chromium.launch` call became `silentLaunch(chromium, ...)`, and its digest in `tools/public_surface_baseline.json` was refreshed. The preserved `docs/evidence/**/historical-verifier.cjs` is unchanged: the accepted receipt pins its digest, and it is history that is never run.

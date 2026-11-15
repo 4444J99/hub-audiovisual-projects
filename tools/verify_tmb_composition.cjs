@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const crypto = require('node:crypto');
+const {silentLaunch} = require('./silent_browser.cjs');
 const ADMISSION = path.join(__dirname,'../docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json');
 const ADMISSION_SHA256 = '6c41ab26b70e5a80de053ae397917f5dad34c14a33c0efd6a07dae7f940838e7';
 const shaBytes = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -175,7 +176,7 @@ async function verify(edition, playwrightModule, executablePath) {
       server.listen(0, '127.0.0.1', resolve);
     });
     const {chromium} = require(playwrightModule || 'playwright');
-    browser = await chromium.launch({headless:true, executablePath, timeout:30000, args:['--disable-dev-shm-usage']});
+    browser = await silentLaunch(chromium, {headless:true, executablePath, timeout:30000, args:['--disable-dev-shm-usage']});
     if (signal.aborted) {
       await browser.close();
       signal.throwIfAborted();
