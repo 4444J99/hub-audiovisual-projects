@@ -46,6 +46,7 @@ HUB = "4444J99/hub-audiovisual-projects"
 SHA_LEN = 12
 SHOW_LEN = 7
 HEX = re.compile(r"[0-9a-f]+")
+NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b")
 RED_CONCLUSIONS = {"failure", "timed_out", "action_required", "startup_failure"}
@@ -85,9 +86,16 @@ def short(sha):
     return sha[:SHA_LEN]
 
 
+SYNTHETIC_STEPS = ("Set up job", "Complete job")
+
+
 def count_executed(steps):
-    """Steps that actually ran: completed with a conclusion other than skipped."""
-    return sum(1 for s in steps or [] if s.get("status") == "completed" and s.get("conclusion") in EXECUTED)
+    """Steps of the workflow itself that ran: completed with a conclusion other than skipped. GitHub's own
+    'Set up job', 'Complete job' and 'Post ...' bookkeeping steps do not count, so a job whose every real step
+    was skipped, or that died before its first step, has zero."""
+    return sum(1 for s in steps or []
+               if s.get("status") == "completed" and s.get("conclusion") in EXECUTED
+               and s.get("name") not in SYNTHETIC_STEPS and not str(s.get("name", "")).startswith("Post "))
 
 
 def verdict(status, conclusion, executed):
@@ -102,7 +110,7 @@ def verdict(status, conclusion, executed):
         return "cannot-start" if conclusion != "success" else "no-steps"
     if conclusion == "success":
         return "pass"
-    if conclusion in RED_CONCLUSIONS or conclusion == "timed_out":
+    if conclusion in RED_CONCLUSIONS:
         return "red"
     return "unknown"
 
@@ -172,7 +180,7 @@ def collect_repo(gh, repo, since, restricted=()):
             raise StatusError("%s #%d: merge commit cannot be resolved on %s" % (repo, pr["number"], branch))
         merged.append({"number": pr["number"], "title": redact(pr["title"], restricted), "merged_at": pr["mergedAt"],
                        "merge_sha": short(merge_sha), "head_sha": short(pr["headRefOid"]), "resolved": True})
-        red.extend(_red_at_merge(gh, repo, pr))
+        red.extend(_red_at_merge(gh, repo, pr, restricted))
 
     open_raw = gh("pr", "list", "-R", repo, "--state", "open", "--limit", str(LIST_LIMIT),
                   "--json", "number,title,isDraft,headRefOid,updatedAt,baseRefName")
@@ -189,12 +197,9 @@ def collect_repo(gh, repo, since, restricted=()):
     ci = []
     for workflow_id in sorted(latest, key=lambda w: (latest[w]["name"], w)):
         run = latest[workflow_id]
-        jobs_data = gh("api", "repos/%s/actions/runs/%d/jobs?per_page=100" % (repo, run["id"]))
-        if jobs_data.get("total_count", 0) > len(jobs_data["jobs"]):
-            raise StatusError("%s: run %d has more than 100 jobs; step count would be understated" % (repo, run["id"]))
-        jobs = jobs_data["jobs"]
+        jobs = gh_pages(gh, "repos/%s/actions/runs/%d/jobs?per_page=100" % (repo, run["id"]), "jobs")
         executed = sum(count_executed(j.get("steps")) for j in jobs)
-        ci.append({"workflow": run["name"], "workflow_id": workflow_id, "run_id": run["id"], "event": run["event"], "status": run["status"],
+        ci.append({"workflow": redact(run["name"], restricted), "workflow_id": workflow_id, "run_id": run["id"], "event": run["event"], "status": run["status"],
                    "conclusion": run["conclusion"], "created_at": run["created_at"],
                    "head_sha": short(run["head_sha"]), "on_current_head": run["head_sha"] == head_sha,
                    "jobs": len(jobs), "executed_steps": executed,
@@ -216,13 +221,21 @@ def collect_repo(gh, repo, since, restricted=()):
     }
 
 
-def _red_at_merge(gh, repo, pr):
+def gh_pages(gh, path, key):
+    """Every item under ``key`` across all pages of a list endpoint; refuses an incomplete read."""
+    pages = gh("api", "--paginate", "--slurp", path)
+    items = [item for page in pages for item in page[key]]
+    total = pages[0].get("total_count", len(items)) if pages else 0
+    if total != len(items):
+        raise StatusError("%s: read %d of %d %s" % (path.split("?")[0], len(items), total, key))
+    return items
+
+
+def _red_at_merge(gh, repo, pr, restricted):
     """Checks on the final head that were red, cannot-start, cancelled, unfinished (late or still pending) when the PR merged."""
     found = []
-    data = gh("api", "repos/%s/commits/%s/check-runs?per_page=100" % (repo, pr["headRefOid"]))
-    if data.get("total_count", 0) > len(data["check_runs"]):
-        raise StatusError("%s #%d: more than 100 check runs; red-at-merge would be incomplete" % (repo, pr["number"]))
-    for check in sorted(data["check_runs"], key=lambda c: (c["name"], c["id"])):
+    checks = gh_pages(gh, "repos/%s/commits/%s/check-runs?per_page=100" % (repo, pr["headRefOid"]), "check_runs")
+    for check in sorted(checks, key=lambda c: (c["name"], c["id"])):
         run_id = None
         executed = None
         match = ACTIONS_JOB.search(check.get("details_url") or "")
@@ -234,7 +247,7 @@ def _red_at_merge(gh, repo, pr):
         state = classify_check(check, pr["mergedAt"], 1 if executed is None else executed)
         if state is None:
             continue
-        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": check["name"],
+        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(check["name"], restricted),
                       "state": state, "conclusion": check.get("conclusion"), "run_id": run_id,
                       "executed_steps": executed, "merged_at": pr["mergedAt"]})
     return found
@@ -281,8 +294,8 @@ def validate_snapshot(snap):
     if (not isinstance(snap.get("captured_at"), str) or not isinstance(snap.get("started_at"), str)
             or type(snap.get("omitted_count")) is not int):
         raise StatusError("snapshot lacks started_at, captured_at or omitted_count")
-    if not all(isinstance(n, str) for n in snap.get("name_only", [])):
-        raise StatusError("snapshot name_only must be a list of names")
+    if not all(isinstance(n, str) and NAME.fullmatch(n) for n in snap.get("name_only", [])):
+        raise StatusError("snapshot name_only must be a list of owner/name repository names")
     for repo in snap["repositories"]:
         name = repo.get("full_name", "?")
         if repo.get("listing") != "full" or repo.get("visibility_live") != "public":
@@ -292,12 +305,10 @@ def validate_snapshot(snap):
             raise StatusError("%s: main head is not resolved" % name)
         if main.get("pr") is not None and (type(main["pr"]) is not int or main["pr"] <= 0):
             raise StatusError("%s: main head cites an unresolved pull request" % name)
-        merged_numbers = set()
         for pr in repo.get("merged_prs", []):
             if (type(pr.get("number")) is not int or pr["number"] <= 0 or pr.get("resolved") is not True
                     or not sha_ok(pr.get("merge_sha")) or not sha_ok(pr.get("head_sha"))):
                 raise StatusError("%s: merged pull request %r is not resolved" % (name, pr.get("number")))
-            merged_numbers.add(pr["number"])
         for pr in repo.get("open_prs", []):
             if type(pr.get("number")) is not int or pr.get("resolved") is not True or not sha_ok(pr.get("head_sha")):
                 raise StatusError("%s: open pull request %r is not resolved" % (name, pr.get("number")))
@@ -308,6 +319,11 @@ def validate_snapshot(snap):
                 raise StatusError("%s: red-at-merge fact does not match the merged pull request it cites" % name)
             if entry.get("run_id") is not None and type(entry["run_id"]) is not int:
                 raise StatusError("%s: red-at-merge run id is not an integer" % name)
+            steps = entry.get("executed_steps")
+            if steps is not None and (type(steps) is not int or steps < 0):
+                raise StatusError("%s: red-at-merge step count is not a count" % name)
+            if entry["state"] in ("red", "cannot-start") and steps is not None and (entry["state"] == "cannot-start") != (steps == 0):
+                raise StatusError("%s: red-at-merge state %r contradicts its %d executed steps" % (name, entry["state"], steps))
             if entry.get("state") not in MERGE_STATES:
                 raise StatusError("%s: unknown red-at-merge state %r" % (name, entry.get("state")))
         for run in repo.get("ci", []):
@@ -457,7 +473,7 @@ def render(snap, manifest):
               "Tracked and listed in full: %s." % ", ".join(r["full_name"].split("/", 1)[1] for r in snap["repositories"])]
     if snap.get("name_only"):
         lines += ["", "Listed by name only (the manifest marks the name public-safe): %s." % ", ".join(
-            "`%s`" % clean(n.split("/", 1)[1]) for n in snap["name_only"])]
+            "`%s`" % n.split("/", 1)[1] for n in snap["name_only"])]
     lines += ["", "%d manifest repositories are omitted because the manifest does not mark them public-safe; their "
               "names, pull requests and contents are not described here." % snap["omitted_count"], "",
               "This page asserts no artistic, device, delivery or custody acceptance for any work. Each repository's "
@@ -469,13 +485,15 @@ def render(snap, manifest):
 
 
 def _gate_surface(page, manifest):
-    facts = identity_contract.surface_facts(
-        page, identity_contract.public_repository_names(manifest),
-        identity_contract.private_repository_names(manifest, allow_listed=True),
-        identity_contract.private_qualified_origins(manifest, allow_listed=True))
-    found = facts["refs"] + facts["commits"]
-    if found:
-        raise StatusError("generated page would add a source binding to the public surface: %s" % found[0])
+    # Markdown escaping can hide a name from the matcher, so check the page as written and with escapes removed.
+    for text in (page, re.sub(r"\\(.)", r"\1", page)):
+        facts = identity_contract.surface_facts(
+            text, identity_contract.public_repository_names(manifest),
+            identity_contract.private_repository_names(manifest, allow_listed=True),
+            identity_contract.private_qualified_origins(manifest, allow_listed=True))
+        found = facts["refs"] + facts["commits"]
+        if found:
+            raise StatusError("generated page would add a source binding to the public surface: %s" % found[0])
 
 
 # -------------------------------------------------------------------------- cli
@@ -484,8 +502,11 @@ def _gate_surface(page, manifest):
 def write_atomic(path, text):
     """Write beside the target and rename, so a failed run leaves no partial or unvalidated file."""
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text)
-    tmp.replace(path)
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        tmp.replace(path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def main(argv=None):
@@ -500,9 +521,11 @@ def main(argv=None):
     parser.add_argument("--check", action="store_true", help="fail (exit 1) when --out differs from the rendering")
     args = parser.parse_args(argv)
     try:
-        manifest = json.loads(args.manifest.read_text())
+        if args.check and not (args.from_snapshot and args.out):
+            raise StatusError("--check needs --from-snapshot and --out")
+        manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
         if args.from_snapshot:
-            snap = json.loads(args.from_snapshot.read_text())
+            snap = json.loads(args.from_snapshot.read_text(encoding="utf-8"))
         else:
             if not args.since or not DATE.match(args.since):
                 raise StatusError("--since YYYY-MM-DD is required in live mode")
@@ -512,20 +535,20 @@ def main(argv=None):
                 raise StatusError("--date must be YYYY-MM-DD")
             snap = collect_snapshot(manifest, args.since, date, now.strftime("%Y-%m-%dT%H:%M:%SZ"))
         page = render(snap, manifest)
+        if args.check:
+            if not args.out.exists() or args.out.read_text(encoding="utf-8") != page:
+                print("status_snapshot: %s differs from its snapshot rendering" % args.out, file=sys.stderr)
+                return 1
+            return 0
         if not args.from_snapshot and args.snapshot_out:
             write_atomic(args.snapshot_out, json.dumps(snap, indent=2, sort_keys=True) + "\n")
+        if args.out:
+            write_atomic(args.out, page)
+        else:
+            sys.stdout.write(page)
     except (StatusError, ValueError, KeyError, TypeError, IndexError, AttributeError, OSError) as exc:
         print("status_snapshot refused: %s" % exc, file=sys.stderr)
         return 2
-    if args.check:
-        if not args.out or not args.out.exists() or args.out.read_text() != page:
-            print("status_snapshot: %s differs from its snapshot rendering" % args.out, file=sys.stderr)
-            return 1
-        return 0
-    if args.out:
-        write_atomic(args.out, page)
-    else:
-        sys.stdout.write(page)
     return 0
 
 

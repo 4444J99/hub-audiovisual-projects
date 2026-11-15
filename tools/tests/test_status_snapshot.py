@@ -30,8 +30,8 @@ identity = load("identity_contract")
 def manifest():
     return {"repositories": [
         {"key": "alpha", "full_name": "4444J" "99/alpha-public", "private": False},
-        {"key": "hidden", "full_name": "4444J" "99/hidden-thing", "private": True},
-        {"key": "named", "full_name": "4444J" "99/named-thing", "private": True, "status_listing": "name-only"},
+        {"key": "hidden-alias", "full_name": "4444J" "99/hidden-thing", "private": True},
+        {"key": "named-alias", "full_name": "4444J" "99/named-thing", "private": True, "status_listing": "name-only"},
     ]}
 
 
@@ -83,6 +83,18 @@ class VerdictTests(unittest.TestCase):
         self.assertEqual(status.verdict("completed", "failure", 4), "red")
         self.assertEqual(status.verdict("completed", "cancelled", 1), "cancelled")
         self.assertEqual(status.verdict("in_progress", None, 9), "pending")
+
+    def test_bookkeeping_steps_do_not_make_a_hollow_job_look_executed(self):
+        hollow = [{"name": "Set up job", "status": "completed", "conclusion": "success"},
+                  {"name": "Run tests", "status": "completed", "conclusion": "skipped"},
+                  {"name": "Post Run checkout", "status": "completed", "conclusion": "success"},
+                  {"name": "Complete job", "status": "completed", "conclusion": "success"}]
+        self.assertEqual(status.count_executed(hollow), 0)
+        self.assertEqual(status.verdict("completed", "success", status.count_executed(hollow)), "no-steps")
+        died = [{"name": "Set up job", "status": "completed", "conclusion": "failure"}]
+        self.assertEqual(status.verdict("completed", "failure", status.count_executed(died)), "cannot-start")
+        real = hollow + [{"name": "Run lint", "status": "completed", "conclusion": "success"}]
+        self.assertEqual(status.count_executed(real), 1)
 
     def test_count_executed_ignores_skipped_and_unfinished(self):
         steps = [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "skipped"},
@@ -199,6 +211,30 @@ class NameOnlyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             identity.validate_public_surface(["docs/status/a.json"], lambda p: marked, {}, m)
 
+    def test_snapshot_beside_a_generated_page_is_exempt_but_a_lone_one_is_not(self):
+        m = manifest()
+        page = identity.GENERATED_STATUS_MARKER + " -->\npage"
+        files = {"docs/status/a.md": page, "docs/status/a.snapshot.json": '{"name_only": ["x/named-thing"]}',
+                 "docs/status/b.snapshot.json": '{"name_only": ["x/named-thing"]}'}
+        identity.validate_public_surface(["docs/status/a.md", "docs/status/a.snapshot.json"], files.get, {}, m)
+        with self.assertRaises(ValueError):
+            identity.validate_public_surface(["docs/status/b.snapshot.json"], files.get, {}, m)
+
+    def test_exemption_covers_the_bare_name_not_the_aliases_or_origin(self):
+        m = manifest()
+        m["repositories"][2]["local_path"] = "named-local"
+        m["repositories"][2]["configured_origin"] = "https://example.invalid/x/named-origin.git"
+        names = identity.private_repository_names(m, allow_listed=True)
+        self.assertNotIn("named-thing", names)
+        self.assertTrue({"named-alias", "named-local", "named-origin"} <= names)
+        self.assertIn("x/named-origin", identity.private_qualified_origins(m, allow_listed=True))
+
+    def test_mark_on_a_public_repository_is_rejected(self):
+        real = json.loads((ROOT / "workspace-manifest.json").read_text())
+        next(r for r in real["repositories"] if not r["private"])["status_listing"] = "name-only"
+        with self.assertRaises(ValueError):
+            identity.validate_manifest(real)
+
     def test_mark_is_accepted_by_the_real_manifest_contract_and_bad_values_are_not(self):
         real = json.loads((ROOT / "workspace-manifest.json").read_text())
         identity.validate_manifest(real)
@@ -267,6 +303,34 @@ class RefusalTests(unittest.TestCase):
         self.assertRefused(lambda s: s.update(date="Nov 15"))
         self.assertRefused(lambda s: s.update(repositories=[]))
 
+    def test_markdown_escaping_cannot_hide_a_restricted_name(self):
+        m = manifest()
+        m["repositories"][1]["full_name"] = "4444J" "99/hid_den-thing"
+        snap = snapshot()
+        snap["repositories"][0]["ci"][0]["workflow"] = "deploy hid_den-thing"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, m)
+
+    def test_red_state_must_match_its_step_count(self):
+        snap = snapshot()
+        snap["repositories"][0]["red_at_merge"][0].update(state="red", executed_steps=0)
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+        snap = snapshot()
+        snap["repositories"][0]["red_at_merge"][1].update(state="cannot-start", executed_steps=3)
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+        snap = snapshot()
+        snap["repositories"][0]["red_at_merge"][0].update(executed_steps="7")
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_name_only_entries_must_be_owner_slash_name(self):
+        snap = snapshot()
+        snap["name_only"] = ["x`y"]
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
     def test_page_naming_a_restricted_repository_is_refused(self):
         with self.assertRaises(status.StatusError):
             status._gate_surface("see 4444J" "99/hidden-thing", manifest())
@@ -300,7 +364,10 @@ class FakeGh:
         text = " ".join(args)
         full = lambda n: sha(n) + "e" * 28  # noqa: E731
         if args[:1] == ("api",):
-            path = args[1]
+            path = args[-1]
+            if "--slurp" in args:
+                page = self(*[a for a in args if a not in ("--paginate", "--slurp")])
+                return [page]
             if path == "repos/o/r":
                 return {"private": self.private, "visibility": "private" if self.private else "public", "default_branch": "main"}
             if path == "repos/o/r/commits/main":
@@ -394,6 +461,11 @@ class CollectTests(unittest.TestCase):
         with self.assertRaises(status.StatusError):
             status.collect_repo(FakeGh(private=True), "o/r", "2026-11-13")
 
+    def test_restricted_names_are_redacted_from_workflow_and_check_names(self):
+        repo = status.collect_repo(FakeGh(), "o/r", "2026-11-13", restricted={"startup", "Dead"})
+        self.assertIn("(restricted repository)", [r["workflow"] for r in repo["ci"]])
+        self.assertIn("(restricted repository)", [e["check"] for e in repo["red_at_merge"]])
+
     def test_empty_commit_message_is_tolerated(self):
         repo = status.collect_repo(FakeGh(empty_message=True), "o/r", "2026-11-13")
         self.assertEqual(repo["main"]["title"], "")
@@ -486,6 +558,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.cli("--since", "2026-11-13", "--out", str(out), "--snapshot-out", str(snap))[0], 0)
         self.assertEqual(json.loads(snap.read_text()), snapshot())
         self.assertEqual(self.cli("--from-snapshot", str(snap), "--out", str(out), "--check")[0], 0)
+
+    def test_check_needs_snapshot_and_out(self):
+        self.assertEqual(self.cli("--check", "--since", "2026-11-13")[0], 2)
+        self.assertEqual(self.cli("--check", "--from-snapshot", str(self.tmp / "snap.json"))[0], 2)
+
+    def test_unreadable_output_is_a_refusal_not_a_traceback(self):
+        code, _, err = self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(self.tmp / "nodir" / "p.md"))
+        self.assertEqual(code, 2)
+        self.assertIn("refused", err)
 
     def test_live_mode_requires_since(self):
         self.assertEqual(self.cli()[0], 2)

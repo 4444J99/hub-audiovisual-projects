@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-15T16:39:52Z",
+  "captured_at": "2026-11-15T16:46:44Z",
   "date": "2026-11-15",
   "name_only": [],
   "omitted_count": 2,
@@ -10,7 +10,7 @@
           "conclusion": "success",
           "created_at": "2026-11-15T15:47:28Z",
           "event": "push",
-          "executed_steps": 13,
+          "executed_steps": 8,
           "head_sha": "7e5a45aa9259",
           "jobs": 1,
           "on_current_head": true,
@@ -135,11 +135,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "675b7ed47a25",
+          "head_sha": "6a1ef8ef535a",
           "number": 44,
           "resolved": true,
           "title": "Generate status pages from live GitHub state (status_snapshot.py); regenerate 2026-11-15",
-          "updated_at": "2026-11-15T16:32:09Z"
+          "updated_at": "2026-11-15T16:40:20Z"
         }
       ],
       "red_at_merge": [
@@ -162,7 +162,7 @@
           "conclusion": "success",
           "created_at": "2026-10-26T04:59:40Z",
           "event": "dynamic",
-          "executed_steps": 5,
+          "executed_steps": 2,
           "head_sha": "03dffc72aedc",
           "jobs": 1,
           "on_current_head": false,
@@ -176,7 +176,7 @@
           "conclusion": "success",
           "created_at": "2026-10-13T18:58:31Z",
           "event": "push",
-          "executed_steps": 13,
+          "executed_steps": 8,
           "head_sha": "3746e3e480dd",
           "jobs": 1,
           "on_current_head": false,
@@ -190,7 +190,7 @@
           "conclusion": "success",
           "created_at": "2026-11-15T16:13:00Z",
           "event": "push",
-          "executed_steps": 11,
+          "executed_steps": 6,
           "head_sha": "5f0f2cb8e3c6",
           "jobs": 1,
           "on_current_head": true,
@@ -667,7 +667,7 @@
           "number": 194,
           "resolved": true,
           "title": "fix(demo): judge the mp4's sound and chroma, not only loudness and luma (fresh cold review of 176)",
-          "updated_at": "2026-11-15T16:38:37Z"
+          "updated_at": "2026-11-15T16:44:12Z"
         }
       ],
       "red_at_merge": [
@@ -684,7 +684,7 @@
         {
           "check": "Combined checks and Python package",
           "conclusion": "failure",
-          "executed_steps": 8,
+          "executed_steps": 5,
           "head_sha": "eb8ca57fbbcc",
           "merged_at": "2026-11-13T21:30:48Z",
           "pr": 133,
@@ -790,7 +790,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 9,
+          "executed_steps": 4,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -804,7 +804,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 54,
+          "executed_steps": 34,
           "head_sha": "d9c4ed16539f",
           "jobs": 5,
           "on_current_head": true,
@@ -818,7 +818,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 3,
+          "executed_steps": 1,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -832,7 +832,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 5,
+          "executed_steps": 2,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -846,7 +846,7 @@
           "conclusion": "success",
           "created_at": "2026-11-15T00:28:59Z",
           "event": "schedule",
-          "executed_steps": 3,
+          "executed_steps": 1,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -860,7 +860,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 7,
+          "executed_steps": 3,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -874,7 +874,7 @@
           "conclusion": "success",
           "created_at": "2026-10-25T23:39:52Z",
           "event": "push",
-          "executed_steps": 8,
+          "executed_steps": 4,
           "head_sha": "bae5c6d7e4d3",
           "jobs": 1,
           "on_current_head": false,
@@ -888,7 +888,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:18Z",
           "event": "dynamic",
-          "executed_steps": 6,
+          "executed_steps": 3,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -902,7 +902,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:11Z",
           "event": "dynamic",
-          "executed_steps": 13,
+          "executed_steps": 6,
           "head_sha": "d9c4ed16539f",
           "jobs": 3,
           "on_current_head": true,
@@ -916,7 +916,7 @@
           "conclusion": "success",
           "created_at": "2026-11-14T14:56:12Z",
           "event": "push",
-          "executed_steps": 8,
+          "executed_steps": 4,
           "head_sha": "d9c4ed16539f",
           "jobs": 1,
           "on_current_head": true,
@@ -968,7 +968,7 @@
           "conclusion": null,
           "created_at": "2026-11-15T15:57:29Z",
           "event": "push",
-          "executed_steps": 15,
+          "executed_steps": 14,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
@@ -980,13 +980,13 @@
         },
         {
           "conclusion": "skipped",
-          "created_at": "2026-11-15T16:38:16Z",
+          "created_at": "2026-11-15T16:46:08Z",
           "event": "workflow_run",
           "executed_steps": 0,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
-          "run_id": 43736590839,
+          "run_id": 43737320576,
           "status": "completed",
           "verdict": "skipped",
           "workflow": "Current State Projection",
@@ -996,7 +996,7 @@
           "conclusion": "success",
           "created_at": "2026-11-15T15:57:29Z",
           "event": "push",
-          "executed_steps": 11,
+          "executed_steps": 7,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
@@ -1010,7 +1010,7 @@
           "conclusion": "failure",
           "created_at": "2026-11-15T15:57:29Z",
           "event": "push",
-          "executed_steps": 13,
+          "executed_steps": 10,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
@@ -1023,7 +1023,7 @@
       ],
       "default_branch": "main",
       "full_name": "4444J99/tool-video-loop-compositor",
-      "issues_open_count": 6,
+      "issues_open_count": 11,
       "issues_updated": [
         {
           "number": 102,
@@ -1066,6 +1066,36 @@
           "state": "open",
           "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
           "updated_at": "2026-11-15T15:00:36Z"
+        },
+        {
+          "number": 126,
+          "state": "open",
+          "title": "Studio: after a deferred loop-mode handoff, edits that keep the slot cancel the retry and leave the old variant for good; docs/authoring/STUDIO_PLAYBACK.md says the next edit fixes it (P2)",
+          "updated_at": "2026-11-15T16:44:40Z"
+        },
+        {
+          "number": 127,
+          "state": "open",
+          "title": "Studio: evolve mode can replace a sibling panel inside the retry window, which changes the loops and silently drops the retry (P2, plausible, not traced)",
+          "updated_at": "2026-11-15T16:44:41Z"
+        },
+        {
+          "number": 128,
+          "state": "open",
+          "title": "Studio: a playback-only relaunch that lands while the toggle's own launch is in flight loses the remaining retry attempts (P3)",
+          "updated_at": "2026-11-15T16:44:42Z"
+        },
+        {
+          "number": 129,
+          "state": "open",
+          "title": "Studio: the retry delay is the longest resident's loop, not the deferred panel's (P3)",
+          "updated_at": "2026-11-15T16:44:43Z"
+        },
+        {
+          "number": 130,
+          "state": "open",
+          "title": "Tests: test_a_late_deferral_belongs_to_its_own_request_not_the_next_one cannot detect the bug it names; paused/held/hidden wait and reattempt counts untested (P3)",
+          "updated_at": "2026-11-15T16:44:44Z"
         }
       ],
       "listing": "full",
@@ -1225,11 +1255,19 @@
         },
         {
           "draft": false,
-          "head_sha": "d7580a7fff2f",
+          "head_sha": "252b186470f5",
           "number": 125,
           "resolved": true,
           "title": "Fix the macOS WebKit gate's measurement races (issue 115)",
-          "updated_at": "2026-11-15T16:38:54Z"
+          "updated_at": "2026-11-15T16:45:28Z"
+        },
+        {
+          "draft": false,
+          "head_sha": "cf6035d3ba0a",
+          "number": 131,
+          "resolved": true,
+          "title": "Docs: a deferred loop-mode handoff is not repaired by an edit that keeps the slot (fresh cold review of #117)",
+          "updated_at": "2026-11-15T16:46:14Z"
         }
       ],
       "red_at_merge": [
@@ -1246,7 +1284,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "5b17ffd34ae5",
           "merged_at": "2026-11-13T23:25:27Z",
           "pr": 100,
@@ -1256,7 +1294,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "d82405694aaf",
           "merged_at": "2026-11-13T23:34:25Z",
           "pr": 101,
@@ -1296,7 +1334,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "8b4fdcbda6c8",
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
@@ -1366,7 +1404,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "3cd0009b40ad",
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
@@ -1376,7 +1414,7 @@
         {
           "check": "test",
           "conclusion": "failure",
-          "executed_steps": 18,
+          "executed_steps": 15,
           "head_sha": "3cd0009b40ad",
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
@@ -1396,7 +1434,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "e57d639b6eeb",
           "merged_at": "2026-11-14T14:49:08Z",
           "pr": 108,
@@ -1406,7 +1444,7 @@
         {
           "check": "test",
           "conclusion": "failure",
-          "executed_steps": 18,
+          "executed_steps": 15,
           "head_sha": "352df4775f97",
           "merged_at": "2026-11-15T03:26:13Z",
           "pr": 109,
@@ -1416,7 +1454,7 @@
         {
           "check": "test",
           "conclusion": "failure",
-          "executed_steps": 18,
+          "executed_steps": 15,
           "head_sha": "29b26dde2021",
           "merged_at": "2026-11-15T07:32:22Z",
           "pr": 114,
@@ -1426,7 +1464,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "ecc5ac941df2",
           "merged_at": "2026-11-15T11:50:53Z",
           "pr": 118,
@@ -1436,7 +1474,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 12,
+          "executed_steps": 9,
           "head_sha": "0e0429bf04c5",
           "merged_at": "2026-11-15T13:52:31Z",
           "pr": 119,
@@ -1446,7 +1484,7 @@
         {
           "check": "sustained-playback",
           "conclusion": "failure",
-          "executed_steps": 13,
+          "executed_steps": 10,
           "head_sha": "9411d7c05797",
           "merged_at": "2026-11-15T14:52:10Z",
           "pr": 121,
@@ -1460,13 +1498,13 @@
       "ci": [
         {
           "conclusion": "success",
-          "created_at": "2026-11-15T15:16:51Z",
+          "created_at": "2026-11-15T16:46:05Z",
           "event": "workflow_run",
-          "executed_steps": 9,
-          "head_sha": "292984ab4548",
+          "executed_steps": 6,
+          "head_sha": "a4228cf70d9f",
           "jobs": 1,
           "on_current_head": true,
-          "run_id": 43728983970,
+          "run_id": 43737315706,
           "status": "completed",
           "verdict": "pass",
           "workflow": "Publish historical edition",
@@ -1476,7 +1514,7 @@
           "conclusion": "success",
           "created_at": "2026-10-25T11:20:52Z",
           "event": "push",
-          "executed_steps": 8,
+          "executed_steps": 4,
           "head_sha": "997ec5c60acc",
           "jobs": 1,
           "on_current_head": false,
@@ -1488,13 +1526,13 @@
         },
         {
           "conclusion": "success",
-          "created_at": "2026-11-15T15:15:51Z",
+          "created_at": "2026-11-15T16:45:15Z",
           "event": "push",
-          "executed_steps": 9,
-          "head_sha": "292984ab4548",
+          "executed_steps": 5,
+          "head_sha": "a4228cf70d9f",
           "jobs": 1,
           "on_current_head": true,
-          "run_id": 43728892350,
+          "run_id": 43737237012,
           "status": "completed",
           "verdict": "pass",
           "workflow": "Verify historical edition",
@@ -1652,11 +1690,11 @@
       ],
       "listing": "full",
       "main": {
-        "committed_at": "2026-11-15T15:15:48Z",
-        "pr": 88,
+        "committed_at": "2026-11-15T16:45:11Z",
+        "pr": 90,
         "resolved": true,
-        "sha": "292984ab4548",
-        "title": "Silent launch lint: string-aware comment stripping (fail-closed) (#88)"
+        "sha": "a4228cf70d9f",
+        "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2 (#90)"
       },
       "merged_prs": [
         {
@@ -1714,16 +1752,24 @@
           "number": 88,
           "resolved": true,
           "title": "Silent launch lint: string-aware comment stripping (fail-closed)"
+        },
+        {
+          "head_sha": "012382a01bfc",
+          "merge_sha": "a4228cf70d9f",
+          "merged_at": "2026-11-15T16:45:12Z",
+          "number": 90,
+          "resolved": true,
+          "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2"
         }
       ],
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "7f74373bec7d",
-          "number": 90,
+          "head_sha": "567f1c007a7c",
+          "number": 103,
           "resolved": true,
-          "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2",
-          "updated_at": "2026-11-15T16:38:13Z"
+          "title": "fix(six-encounters): verifier side-channel, band, canonical-receipt and seed holes (fresh cold review of #80)",
+          "updated_at": "2026-11-15T16:41:40Z"
         }
       ],
       "red_at_merge": [],
@@ -1732,5 +1778,5 @@
   ],
   "schema": 1,
   "since": "2026-11-13",
-  "started_at": "2026-11-15T16:37:39Z"
+  "started_at": "2026-11-15T16:44:31Z"
 }
