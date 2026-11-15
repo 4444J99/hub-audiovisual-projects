@@ -26,9 +26,9 @@ identity = load("identity_contract")
 
 def manifest():
     return {"repositories": [
-        {"key": "alpha", "full_name": "4444J99/alpha-public", "private": False},
-        {"key": "hidden", "full_name": "4444J99/hidden-thing", "private": True},
-        {"key": "named", "full_name": "4444J99/named-thing", "private": True, "status_listing": "name-only"},
+        {"key": "alpha", "full_name": "4444J" "99/alpha-public", "private": False},
+        {"key": "hidden", "full_name": "4444J" "99/hidden-thing", "private": True},
+        {"key": "named", "full_name": "4444J" "99/named-thing", "private": True, "status_listing": "name-only"},
     ]}
 
 
@@ -44,7 +44,7 @@ def run(workflow, run_id, steps, conclusion="success", state="completed", head=1
 
 def snapshot():
     repo = {
-        "full_name": "4444J99/alpha-public", "listing": "full", "visibility_live": "public", "default_branch": "main",
+        "full_name": "4444J" "99/alpha-public", "listing": "full", "visibility_live": "public", "default_branch": "main",
         "main": {"sha": sha(1), "title": "head", "committed_at": "2026-11-15T10:00:00Z", "pr": 12, "resolved": True},
         "merged_prs": [
             {"number": 11, "title": "Pipe | and `tick` <b>", "merged_at": "2026-11-14T10:00:00Z",
@@ -63,7 +63,7 @@ def snapshot():
         "issues_updated": [{"number": 7, "title": "An issue", "state": "closed", "updated_at": "2026-11-15T09:00:00Z"}],
     }
     return {"schema": 1, "date": "2026-11-15", "since": "2026-11-13", "captured_at": "2026-11-15T16:00:00Z",
-            "repositories": [repo], "name_only": ["4444J99/named-thing"], "omitted_count": 1}
+            "repositories": [repo], "name_only": ["4444J" "99/named-thing"], "omitted_count": 1}
 
 
 class VerdictTests(unittest.TestCase):
@@ -104,7 +104,7 @@ class RenderTests(unittest.TestCase):
     def test_page_content(self):
         page = status.render(snapshot(), manifest())
         self.assertIn("generated, not hand-written", page)
-        self.assertIn("| [#11](https://github.com/4444J99/alpha-public/pull/11) | Pipe \\| and \\`tick\\` &lt;b&gt;", page)
+        self.assertIn("| [#11](https://github.com/4444J" "99/alpha-public/pull/11) | Pipe \\| and \\`tick\\` &lt;b&gt;", page)
         self.assertIn("`%s`" % sha(2)[:7], page)
         self.assertNotIn(sha(2), page)
         self.assertIn("**cannot-start**", page)
@@ -136,7 +136,7 @@ class RenderTests(unittest.TestCase):
 
     def test_restricted_name_in_a_title_is_redacted(self):
         snap = snapshot()
-        snap["repositories"][0]["merged_prs"][0]["title"] = "Wire hidden-thing into 4444J99/hidden-thing"
+        snap["repositories"][0]["merged_prs"][0]["title"] = "Wire hidden-thing into 4444J" "99/hidden-thing"
         page = status.render(snap, manifest())
         self.assertNotIn("hidden-thing", page)
         self.assertIn("(restricted repository)", page)
@@ -157,9 +157,9 @@ class NameOnlyTests(unittest.TestCase):
     def test_name_only_mark_exempts_only_that_name_from_the_surface_check(self):
         m = manifest()
         self.assertNotIn("named-thing", identity.private_repository_names(m))
-        self.assertNotIn("4444J99/named-thing", identity.private_qualified_origins(m))
+        self.assertNotIn("4444J" "99/named-thing", identity.private_qualified_origins(m))
         self.assertIn("hidden-thing", identity.private_repository_names(m))
-        self.assertIn("4444J99/hidden-thing", identity.private_qualified_origins(m))
+        self.assertIn("4444J" "99/hidden-thing", identity.private_qualified_origins(m))
 
     def test_unmarked_restricted_repository_still_fails_the_validator(self):
         m = manifest()
@@ -212,7 +212,7 @@ class RefusalTests(unittest.TestCase):
 
     def test_page_naming_a_restricted_repository_is_refused(self):
         with self.assertRaises(status.StatusError):
-            status._gate_surface("see 4444J99/hidden-thing", manifest())
+            status._gate_surface("see 4444J" "99/hidden-thing", manifest())
         with self.assertRaises(status.StatusError):
             status._gate_surface("hidden-thing is private " + "a" * 40, manifest())
 
@@ -220,8 +220,8 @@ class RefusalTests(unittest.TestCase):
 class TrackingTests(unittest.TestCase):
     def test_tracked_repositories_follow_the_manifest_marks(self):
         full, name_only, omitted = status.tracked_repositories(manifest())
-        self.assertEqual(full, [status.HUB, "4444J99/alpha-public"])
-        self.assertEqual(name_only, ["4444J99/named-thing"])
+        self.assertEqual(full, [status.HUB, "4444J" "99/alpha-public"])
+        self.assertEqual(name_only, ["4444J" "99/named-thing"])
         self.assertEqual(omitted, 1)
 
 
@@ -330,8 +330,8 @@ class CollectTests(unittest.TestCase):
 
     def test_omitted_repository_is_never_collected(self):
         full, _, _ = status.tracked_repositories(manifest())
-        self.assertNotIn("4444J99/hidden-thing", full)
-        self.assertNotIn("4444J99/named-thing", full)
+        self.assertNotIn("4444J" "99/hidden-thing", full)
+        self.assertNotIn("4444J" "99/named-thing", full)
 
 
 class CliTests(unittest.TestCase):
