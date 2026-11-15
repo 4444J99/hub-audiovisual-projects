@@ -195,6 +195,8 @@ def collect_repo(gh, repo, since, restricted=()):
     runs = gh("api", "repos/%s/actions/runs?branch=%s&per_page=%d" % (repo, branch, RUN_WINDOW))["workflow_runs"]
     latest = {}
     for run in sorted(runs, key=lambda r: (r["created_at"], r["id"]), reverse=True):
+        if run.get("event") in ("pull_request", "pull_request_target") or run.get("head_sha") is None:
+            continue  # a pull request from a fork branch named like the default branch is not default-branch CI
         latest.setdefault(run["workflow_id"], run)
     ci = []
     for workflow_id in sorted(latest, key=lambda w: (latest[w]["name"], w)):
@@ -254,6 +256,20 @@ def _red_at_merge(gh, repo, pr, restricted):
         found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(check["name"], restricted),
                       "state": state, "conclusion": check.get("conclusion"), "run_id": run_id,
                       "executed_steps": executed, "merged_at": pr["mergedAt"]})
+    # Legacy commit statuses (status contexts) are not check runs; read them as well.
+    combined = gh("api", "repos/%s/commits/%s/status?per_page=100" % (repo, pr["headRefOid"]))
+    statuses = combined.get("statuses") or []
+    if combined.get("total_count", len(statuses)) > len(statuses):
+        raise StatusError("%s #%d: more than 100 commit statuses; red-at-merge would be incomplete" % (repo, pr["number"]))
+    for item in sorted(statuses, key=lambda x: (x["context"], x.get("id", 0))):
+        done = item.get("state") != "pending"
+        state = ("pending" if not done else "late" if item["updated_at"] > pr["mergedAt"]
+                 else "red" if item["state"] in ("failure", "error") else None)
+        if state is None:
+            continue
+        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(item["context"], restricted),
+                      "state": state, "conclusion": item["state"], "run_id": None, "executed_steps": None,
+                      "merged_at": pr["mergedAt"]})
     return found
 
 
@@ -261,8 +277,7 @@ def redact(text, restricted):
     """Replace restricted repository names in free text so they never enter a snapshot."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)), " ".join(str(text).split()))
     for name in sorted(restricted, key=len, reverse=True):
-        text = re.sub(r"(?<![A-Za-z0-9_.-])%s(?![A-Za-z0-9_-])" % re.escape(name), "(restricted repository)",
-                      text, flags=re.IGNORECASE)
+        text = re.sub(re.escape(name), "(restricted repository)", text, flags=re.IGNORECASE)
     return text
 
 
@@ -367,6 +382,10 @@ def _step_text(entry):
 
 def render(snap, manifest):
     validate_snapshot(snap)
+    allowed = {HUB} | {r["full_name"] for r in manifest["repositories"] if not r["private"]}
+    for repo in snap["repositories"]:
+        if repo["full_name"] not in allowed:
+            raise StatusError("%s is not a public repository of this manifest and may not be listed in full" % repo["full_name"])
     c = clean
     older_note = []
     lines = [GENERATED_NOTE, "", "# Audiovisual estate status — %s (generated)" % snap["date"], "",
@@ -472,7 +491,7 @@ def render(snap, manifest):
                 run, _step_text(e["executed_steps"])))
         lines.append("")
     if not any_red:
-        lines += ["No merged pull request in this window had a red, cannot-start, cancelled, late or pending check at merge.", ""]
+        lines += ["No merged pull request in this window had a red, cannot-start, no-steps, cancelled, late or pending check run or commit status at merge.", ""]
 
     lines += ["## Scope", "",
               "Tracked and listed in full: %s." % ", ".join(r["full_name"].split("/", 1)[1] for r in snap["repositories"])]
@@ -486,10 +505,20 @@ def render(snap, manifest):
               "claimed here.", ""]
     page = "\n".join(lines)
     _gate_surface(page, manifest)
+    _gate_surface(json.dumps(snap, sort_keys=True), manifest)  # the stored snapshot carries fields the page does not print
     return page
 
 
+def _restricted_substrings(manifest):
+    """Restricted names that must not appear even fused into a longer token (the matcher's word boundary would miss them)."""
+    return {n.lower() for n in identity_contract.private_repository_names(manifest, allow_listed=True) if len(n) >= 4}
+
+
 def _gate_surface(page, manifest):
+    lowered = page.lower().replace("\\", "")
+    for name in sorted(_restricted_substrings(manifest)):
+        if name in lowered:
+            raise StatusError("generated page contains a restricted repository name: %s" % name)
     # Markdown escaping can hide a name from the matcher, so check the page as written and with escapes removed.
     for text in (page, re.sub(r"\\(.)", r"\1", page)):
         facts = identity_contract.surface_facts(

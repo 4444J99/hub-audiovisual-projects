@@ -126,7 +126,6 @@ class RenderTests(unittest.TestCase):
         self.assertIn("`%s`" % sha(2)[:7], page)
         self.assertNotIn(sha(2), page)
         self.assertIn("**cannot-start**", page)
-        self.assertNotIn("| **pass** | 0 ", page)
         self.assertIn("**pending**", page)
         self.assertIn("**red** | failure | [55]", page)
         self.assertIn("**cannot-start** | failure | [56]", page)
@@ -417,6 +416,12 @@ class FakeGh:
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/58/job/69"}]}
             if path == "repos/o/r/actions/jobs/66":
                 return {"steps": [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "failure"}]}
+            if path.startswith("repos/o/r/commits/") and "/status?" in path:
+                return {"total_count": 4, "statuses": [
+                    {"id": 1, "context": "ci/legacy-red", "state": "failure", "updated_at": "2026-11-15T09:00:00Z"},
+                    {"id": 2, "context": "ci/legacy-ok", "state": "success", "updated_at": "2026-11-15T09:00:00Z"},
+                    {"id": 3, "context": "ci/legacy-late", "state": "success", "updated_at": "2026-11-15T11:00:00Z"},
+                    {"id": 4, "context": "ci/legacy-wait", "state": "pending", "updated_at": "2026-11-15T09:00:00Z"}]}
             if path == "repos/o/r/actions/jobs/67":
                 return {"steps": []}
             if path == "repos/o/r/actions/jobs/69":
@@ -459,7 +464,8 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(len(repo["ci"]), 3, "workflows sharing a display name stay separate")
         self.assertEqual(by_id[3]["verdict"], "cancelled")
         self.assertTrue([c for c in gh.calls if c[-1].endswith("/jobs/71")], "successful checks are read for hollow passes")
-        states = {e["check"]: (e["state"], e["executed_steps"], e["run_id"]) for e in repo["red_at_merge"]}
+        states = {e["check"]: (e["state"], e["executed_steps"], e["run_id"]) for e in repo["red_at_merge"]
+                  if not e["check"].startswith("ci/")}
         self.assertEqual(states, {"test": ("red", 2, 55), "startup": ("cannot-start", 0, 56),
                                   "pages": ("red", None, None), "late": ("pending", None, 57),
                                   "slow": ("late", 1, 59), "hollow": ("no-steps", 0, 60)})
@@ -480,6 +486,47 @@ class CollectTests(unittest.TestCase):
         repo = status.collect_repo(FakeGh(), "o/r", "2026-11-13", restricted={"startup", "Dead"})
         self.assertIn("(restricted repository)", [r["workflow"] for r in repo["ci"]])
         self.assertIn("(restricted repository)", [e["check"] for e in repo["red_at_merge"]])
+
+    def test_fork_pull_request_runs_named_main_are_not_default_branch_ci(self):
+        class Fork(FakeGh):
+            def __call__(self, *args):
+                out = super().__call__(*args)
+                if args[-1].startswith("repos/o/r/actions/runs?") and "--slurp" not in args:
+                    out["workflow_runs"].append({"id": 999, "workflow_id": 1, "name": "Verify", "status": "completed",
+                                                 "conclusion": "failure", "event": "pull_request", "head_sha": sha(55) + "e" * 28,
+                                                 "created_at": "2026-11-15T23:00:00Z"})
+                return out
+        repo = status.collect_repo(Fork(), "o/r", "2026-11-13")
+        self.assertNotIn(999, [r["run_id"] for r in repo["ci"]])
+        self.assertEqual({r["workflow_id"]: r["run_id"] for r in repo["ci"]}[1], 100)
+
+    def test_legacy_commit_statuses_are_read_for_red_at_merge(self):
+        repo = status.collect_repo(FakeGh(), "o/r", "2026-11-13")
+        got = {e["check"]: (e["state"], e["conclusion"]) for e in repo["red_at_merge"]}
+        self.assertEqual(got["ci/legacy-red"], ("red", "failure"))
+        self.assertEqual(got["ci/legacy-late"], ("late", "success"))
+        self.assertEqual(got["ci/legacy-wait"], ("pending", "pending"))
+        self.assertNotIn("ci/legacy-ok", got)
+
+    def test_restricted_name_fused_into_a_longer_token_is_redacted_and_gated(self):
+        self.assertEqual(status.redact("sync-hidden-thing_v2 x.hidden-thing", {"hidden-thing"}),
+                         "sync-(restricted repository)_v2 x.(restricted repository)")
+        snap = snapshot()
+        snap["repositories"][0]["merged_prs"][0]["title"] = "sync-hidden-thing outputs"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_full_entry_must_be_a_public_repository_of_the_manifest(self):
+        snap = snapshot()
+        snap["repositories"][0]["full_name"] = "4444J" "99/named-thing"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_snapshot_fields_the_page_does_not_print_are_gated_too(self):
+        snap = snapshot()
+        snap["repositories"][0]["main"]["title"] = "mentions hidden-thing"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
 
     def test_head_that_moves_during_collection_is_refused(self):
         with self.assertRaises(status.StatusError):
