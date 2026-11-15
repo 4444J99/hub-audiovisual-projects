@@ -3,6 +3,9 @@
 from copy import deepcopy
 import importlib.util
 import json
+import os
+import tempfile
+import subprocess
 from pathlib import Path
 import unittest
 
@@ -66,6 +69,85 @@ class IdentityContract(unittest.TestCase):
         repo["local_path"] = "new-private-source"
         with self.assertRaisesRegex(ValueError, "frozen published baseline"):
             identity.validate_manifest(self.manifest)
+
+    SHA = "0123456789abcdef0123456789abcdef01234567"
+
+    def surface(self, files, baseline=None):
+        identity.validate_public_surface(list(files), files.__getitem__, baseline or {}, self.manifest)
+
+    def test_private_pointer_files_rejected(self):
+        # Regression for closed PR 32: a hand-authored pointer to a private repository
+        # bypassed the manifest-only publication checks (AGENTS.md forbids private bindings).
+        for path in ("docs/private-pointers/study.md", "docs/private_pointer-x.md", "notes/Private-Pointers/a.md"):
+            with self.assertRaisesRegex(ValueError, "private owner"):
+                self.surface({"README.md": "", path: ""})
+
+    def test_pointer_under_any_filename_rejected_by_content(self):
+        named = "Private repository 4444J99/some-private-study, commit %s, assets/a.wav." % self.SHA
+        bare = "Source lives in a private repository; pinned commit %s." % self.SHA
+        plain = "Repository: time-moment-brief\nCommit: %s\nPath: assets/a.wav" % self.SHA
+        for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md",
+                     "projects/time-moment-brief/source-provenance.md", "artworks/a/notes.txt",
+                     "tools/source-provenance.md", ".github/source-provenance.md",
+                     "docs/source-provenance.MD", "docs/source-provenance.rst", "docs/source-provenance.html",
+                     "docs/source-provenance", "docs/source-provenance.yaml"):
+            for text in (named, bare, plain):
+                with self.assertRaisesRegex(ValueError, "private owner"):
+                    self.surface({path: text})
+
+    def test_baseline_document_is_frozen_by_content(self):
+        old = "private repository 4444J99/old-owner at %s" % self.SHA
+        base = {"README.md": identity.content_digest(old)}
+        self.surface({"README.md": old}, base)
+        for added in ("\nprivate repository 4444J99/new-owner",
+                      "\nprivate pin fedcba9876543210fedcba9876543210fedcba98",
+                      "\nrepository 4444J99/old-owner at %s asset media/unreviewed-take-42.wav" % self.SHA):
+            with self.assertRaisesRegex(ValueError, "private owner"):
+                self.surface({"README.md": old + added}, base)
+
+    def test_private_origin_survives_public_continuation_with_same_basename(self):
+        text = "origin https://github.com/organvm/the-thing-without-a-name.git at %s media/take.wav" % self.SHA
+        with self.assertRaisesRegex(ValueError, "private owner"):
+            self.surface({"docs/new-source-provenance.md": text})
+
+    def test_public_navigation_slugs_are_not_source_names(self):
+        self.surface({"docs/nav.md": "[engine](../repositories/deterministic-performance-engine/README.md) "
+                                     "and synchronized-generation-playback"})
+
+    def test_public_commit_url_is_not_a_private_pin(self):
+        text = "private custody note; review at https://github.com/4444J99/hub-audiovisual-projects/commit/%s" % self.SHA
+        self.surface({"docs/new-evidence.md": text})
+
+    def test_pointer_cannot_hide_behind_case_or_encoding(self):
+        text = "Repository: https://github.com/4444j99/Time-Moment-Brief\nCommit: %s\nPath: media/take.wav" % self.SHA
+        with self.assertRaisesRegex(ValueError, "private owner"):
+            self.surface({"docs/source-provenance.md": text})
+        plain = "Repository: time-moment-brief\nCommit: %s\nPath: media/take.wav" % self.SHA
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, data in (("bom16.html", plain.encode("utf-16")), ("le16.html", plain.encode("utf-16-le")),
+                               ("be16.html", plain.encode("utf-16-be")), ("bom8.md", b"\xef\xbb\xbf" + plain.encode())):
+                path = Path(tmp) / name
+                path.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, "private owner"):
+                    identity.validate_public_surface(["docs/" + name], lambda _p, f=path: identity.read_text_or_none(f),
+                                                     {}, self.manifest)
+
+    def test_public_names_aliases_and_public_remotes_allowed(self):
+        for ref in ("4444J99/tool-audiovisual-postproduction/pull/1", "4444J99/hub-audiovisual-projects",
+                    "https://github.com/4444J99/the-thing-without-a-name.git",
+                    "4444J99/audiovisual-media-postproduction-system/pull/59", "4444J99/simvltanea/pull/32"):
+            self.surface({"docs/new-note.md": "See %s" % ref})
+
+    def test_tracked_files_contain_no_private_pointers(self):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=TOOLS.parent, check=True, env=env,
+                             capture_output=True, text=True).stdout
+        tracked = [p for p in out.split("\0") if p]
+        self.assertTrue(tracked)
+        baseline = json.loads((TOOLS / "public_surface_baseline.json").read_text())["paths"]
+        self.assertTrue(set(baseline) <= set(tracked))
+        identity.validate_public_surface(
+            tracked, lambda p: identity.read_text_or_none(TOOLS.parent / p), baseline, self.manifest)
 
     def test_private_registry_source_rejected(self):
         source = self.manifest["identity_registry"]["source_media"][0]
