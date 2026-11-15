@@ -714,9 +714,31 @@ class CollectTests(unittest.TestCase):
             with self.assertRaises(status.StatusError):
                 status.render(snap, manifest())
         snap = snapshot()
-        snap["repositories"][0]["default_branch"] = "<b>x"
+        snap["repositories"][0]["default_branch"] = "  "
         with self.assertRaises(status.StatusError):
             status.render(snap, manifest())
+
+    def test_impossible_timestamps_and_unexpected_fields_are_refused(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        for mutate in (lambda s: s.update(captured_at="2026-99-99T99:99:99Z"),
+                       lambda s: s.update(started_at="\uff12\uff10\uff12\uff16-11-15T10:00:00Z"),
+                       lambda s: repo(s)["issues_updated"][0].update(state="<i>"),
+                       lambda s: repo(s)["issues_updated"][0].update(updated_at="soon"),
+                       lambda s: repo(s)["merged_prs"][0].update(merged_at="<b>"),
+                       lambda s: repo(s)["ci"][0].update(conclusion="<i>"),
+                       lambda s: repo(s)["red_at_merge"][0].update(conclusion="<i>")):
+            snap = snapshot()
+            mutate(snap)
+            with self.assertRaises(status.StatusError):
+                status.render(snap, manifest())
+
+    def test_legal_but_unusual_branch_names_render(self):
+        snap = snapshot()
+        snap["repositories"][0]["default_branch"] = "release+1#`x"
+        snap["repositories"][0]["merged_prs"] = []
+        snap["repositories"][0]["red_at_merge"] = []
+        page = status.render(snap, manifest())
+        self.assertIn("No pull request merged into `release+1#'x` in this window.", page)
 
     def test_head_pull_request_must_match_the_head_when_listed(self):
         snap = snapshot()
