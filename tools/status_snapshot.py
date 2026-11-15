@@ -50,6 +50,8 @@ SHOW_LEN = 7
 PLACEHOLDER = "(restricted repository)"
 SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside longer tokens
 HEX = re.compile(r"[0-9a-f]+")
+TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+BRANCH = re.compile(r"[A-Za-z0-9._/-]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b", re.IGNORECASE)
@@ -338,15 +340,15 @@ def redact(text, restricted, marked=()):
     keeps its bare name, but a path, owner-qualified or tagged use of it (``name/x``, ``a/name``, ``name:x``,
     ``name@x``, ``name#1``) is replaced, since the exemption covers the bare name only."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)).lower(), " ".join(str(text).split()))
+    parts = []
     for name in sorted(marked, key=len, reverse=True):
         n = re.escape(name)
-        text = re.sub(r"(?i)[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#]\S" % (n, n, n),
-                      PLACEHOLDER, text)
-    parts = [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
-             for n in sorted(restricted, key=len, reverse=True)]
+        parts.append(r"[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#]\S" % (n, n, n))
+    parts += [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
+              for n in sorted(restricted, key=len, reverse=True)]
     if not parts:
         return text
-    # One pass over alternatives, so a replacement is never re-matched by a later name.
+    # One pass over every alternative, so a replacement is never re-matched by a later name.
     return re.sub("|".join(parts), PLACEHOLDER, text, flags=re.IGNORECASE)
 
 
@@ -393,15 +395,21 @@ def validate_snapshot(snap):
     def sha_ok(value):
         return isinstance(value, str) and len(value) == SHA_LEN and HEX.fullmatch(value) is not None
 
-    if (not isinstance(snap.get("captured_at"), str) or not isinstance(snap.get("started_at"), str)
-            or type(snap.get("omitted_count")) is not int):
-        raise StatusError("snapshot lacks started_at, captured_at or omitted_count")
+    if type(snap.get("omitted_count")) is not int:
+        raise StatusError("snapshot lacks omitted_count")
+    for key in ("started_at", "captured_at"):
+        if not isinstance(snap.get(key), str) or not TIMESTAMP.fullmatch(snap[key]):
+            raise StatusError("snapshot %s must be YYYY-MM-DDTHH:MM:SSZ" % key)
+    if snap["started_at"] > snap["captured_at"]:
+        raise StatusError("snapshot started_at is after captured_at")
     if not all(isinstance(n, str) and NAME.fullmatch(n) for n in snap.get("name_only", [])):
         raise StatusError("snapshot name_only must be a list of bare repository names")
     for repo in snap["repositories"]:
         name = repo.get("full_name", "?")
         if repo.get("listing") != "full" or repo.get("visibility_live") != "public":
             raise StatusError("%s: only repositories confirmed public may be listed in full" % name)
+        if not isinstance(repo.get("default_branch"), str) or not BRANCH.fullmatch(repo["default_branch"]):
+            raise StatusError("%s: default branch name is not plain text" % name)
         main = repo.get("main") or {}
         if not sha_ok(main.get("sha")) or main.get("resolved") is not True:
             raise StatusError("%s: main head is not resolved" % name)
@@ -415,6 +423,9 @@ def validate_snapshot(snap):
             if type(pr.get("number")) is not int or pr.get("resolved") is not True or not sha_ok(pr.get("head_sha")):
                 raise StatusError("%s: open pull request %r is not resolved" % (name, pr.get("number")))
         by_number = {pr["number"]: pr for pr in repo.get("merged_prs", [])}
+        in_window = by_number.get(main.get("pr"))
+        if in_window is not None and in_window["merge_sha"] != main["sha"]:
+            raise StatusError("%s: main head cites pull request #%d whose merge commit is a different commit" % (name, main["pr"]))
         for entry in repo.get("red_at_merge", []):
             cited = by_number.get(entry.get("pr"))
             if cited is None or entry.get("head_sha") != cited["head_sha"] or entry.get("merged_at") != cited["merged_at"]:
