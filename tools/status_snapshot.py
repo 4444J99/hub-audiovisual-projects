@@ -52,7 +52,7 @@ SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside
 HEX = re.compile(r"[0-9a-f]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
-FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b")
+FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b", re.IGNORECASE)
 RED_CONCLUSIONS = {"failure", "timed_out", "action_required", "startup_failure"}
 MERGE_STATES = ("red", "cannot-start", "no-steps", "late", "pending", "cancelled")
 EXECUTED = {"success", "failure", "cancelled", "timed_out"}
@@ -66,6 +66,10 @@ class StatusError(Exception):
     """A snapshot cannot be taken or rendered without citing something unresolved."""
 
 
+class HeadMoved(StatusError):
+    """The default branch advanced while a repository was being read."""
+
+
 class NotFound(StatusError):
     """GitHub answered HTTP 404 for a read."""
 
@@ -76,6 +80,7 @@ class NotFound(StatusError):
 TRANSIENT = re.compile(r"unexpected EOF|connection reset|timed? ?out|TLS handshake|\bHTTP 50[0-4]\b|temporarily unavailable",
                        re.IGNORECASE)
 RETRIES = 2
+HEAD_ATTEMPTS = 3
 
 
 def gh_json(*args):
@@ -170,8 +175,18 @@ def classify_check(check, merged_at, executed):
 # ------------------------------------------------------------------- collection
 
 
+def check_manifest(manifest):
+    """The fields this tool relies on must be well formed; the full contract is enforced by identity_contract."""
+    for repo in manifest.get("repositories", []):
+        if type(repo.get("private")) is not bool:
+            raise StatusError("manifest repository privacy must be explicit")
+        if repo.get("status_listing") not in (None, "name-only") or (repo.get("status_listing") and not repo["private"]):
+            raise StatusError("manifest status_listing must be absent or name-only, on a restricted repository")
+
+
 def tracked_repositories(manifest):
     """(full list, name-only list, omitted count) from the manifest's own marks."""
+    check_manifest(manifest)
     full = [HUB]
     name_only = []
     omitted = 0
@@ -191,7 +206,7 @@ def _is_ancestor(gh, repo, sha, branch):
     return isinstance(cmp, dict) and cmp.get("status") in ("ahead", "identical")
 
 
-def collect_repo(gh, repo, since, restricted=()):
+def collect_repo(gh, repo, since, restricted=(), marked=()):
     meta = gh("api", "repos/%s" % repo)
     if meta.get("private") is not False or meta.get("visibility", "public") != "public":
         raise StatusError("%s is marked public in the manifest but GitHub does not report it public" % repo)
@@ -219,9 +234,9 @@ def collect_repo(gh, repo, since, restricted=()):
         merge_sha = (pr.get("mergeCommit") or {}).get("oid")
         if not merge_sha or not _is_ancestor(gh, repo, merge_sha, branch):
             raise StatusError("%s #%d: merge commit cannot be resolved on %s" % (repo, pr["number"], branch))
-        merged.append({"number": pr["number"], "title": redact(pr["title"], restricted), "merged_at": pr["mergedAt"],
+        merged.append({"number": pr["number"], "title": redact(pr["title"], restricted, marked), "merged_at": pr["mergedAt"],
                        "merge_sha": short(merge_sha), "head_sha": short(pr["headRefOid"]), "resolved": True})
-        red.extend(_red_at_merge(gh, repo, pr, restricted))
+        red.extend(_red_at_merge(gh, repo, pr, restricted, marked))
 
     if head_pr is not None and head_pr_merged[:10] >= since and head_pr not in {p["number"] for p in merged_raw}:
         raise StatusError("%s: the head's pull request #%d is missing from the merged-PR search (index lag); run again shortly"
@@ -230,7 +245,7 @@ def collect_repo(gh, repo, since, restricted=()):
                   "--json", "number,title,isDraft,headRefOid,updatedAt,baseRefName")
     if len(open_raw) >= LIST_LIMIT:
         raise StatusError("%s: open pull request list reached the %d limit" % (repo, LIST_LIMIT))
-    open_prs = [{"number": p["number"], "title": redact(p["title"], restricted), "draft": bool(p["isDraft"]),
+    open_prs = [{"number": p["number"], "title": redact(p["title"], restricted, marked), "draft": bool(p["isDraft"]),
                  "head_sha": short(p["headRefOid"]), "updated_at": p["updatedAt"], "resolved": True}
                 for p in sorted(open_raw, key=lambda p: p["number"])]
 
@@ -241,18 +256,18 @@ def collect_repo(gh, repo, since, restricted=()):
             continue  # a pull request from a fork branch named like the default branch is not default-branch CI
         latest.setdefault(run["workflow_id"], run)
     ci = []
-    for workflow_id in sorted(latest, key=lambda w: (latest[w]["name"], w)):
+    for workflow_id in sorted(latest, key=lambda w: (latest[w].get("name") or "", w)):
         run = latest[workflow_id]
         jobs = gh_pages(gh, "repos/%s/actions/runs/%d/jobs?per_page=100" % (repo, run["id"]), "jobs")
         executed = sum(count_executed(j.get("steps")) for j in jobs)
-        ci.append({"workflow": redact(run["name"], restricted), "workflow_id": workflow_id, "run_id": run["id"], "event": run["event"], "status": run["status"],
+        ci.append({"workflow": redact(run.get("name") or "(unnamed workflow)", restricted, marked), "workflow_id": workflow_id, "run_id": run["id"], "event": run["event"], "status": run["status"],
                    "conclusion": run["conclusion"], "created_at": run["created_at"],
                    "head_sha": short(run["head_sha"]), "on_current_head": run["head_sha"] == head_sha,
                    "jobs": len(jobs), "executed_steps": executed,
                    "verdict": verdict(run["status"], run["conclusion"], executed)})
 
     if gh("api", "repos/%s/commits/%s" % (repo, urllib.parse.quote(branch, safe="")))["sha"] != head_sha:
-        raise StatusError("%s: %s moved while its state was being read; run again" % (repo, branch))
+        raise HeadMoved("%s: %s moved while its state was being read; run again" % (repo, branch))
     issues_updated = gh("issue", "list", "-R", repo, "--state", "all", "--search", "updated:>=%s" % since,
                         "--limit", str(LIST_LIMIT), "--json", "number,title,state,updatedAt")
     issues_open = gh("issue", "list", "-R", repo, "--state", "open", "--limit", "500", "--json", "number")
@@ -260,11 +275,11 @@ def collect_repo(gh, repo, since, restricted=()):
         raise StatusError("%s: issue list reached its limit" % repo)
     return {
         "full_name": repo, "listing": "full", "visibility_live": "public", "default_branch": branch,
-        "main": {"sha": short(head_sha), "title": redact((head["commit"]["message"].splitlines() or [""])[0], restricted),
+        "main": {"sha": short(head_sha), "title": redact((head["commit"]["message"].splitlines() or [""])[0], restricted, marked),
                  "committed_at": head["commit"]["committer"]["date"], "pr": head_pr, "resolved": True},
         "merged_prs": merged, "merged_other_base": other_base, "open_prs": open_prs, "ci": ci, "red_at_merge": red,
         "issues_open_count": len(issues_open),
-        "issues_updated": [{"number": i["number"], "title": redact(i["title"], restricted), "state": i["state"].lower(),
+        "issues_updated": [{"number": i["number"], "title": redact(i["title"], restricted, marked), "state": i["state"].lower(),
                             "updated_at": i["updatedAt"]} for i in sorted(issues_updated, key=lambda i: i["number"])],
     }
 
@@ -279,7 +294,7 @@ def gh_pages(gh, path, key):
     return items
 
 
-def _red_at_merge(gh, repo, pr, restricted):
+def _red_at_merge(gh, repo, pr, restricted, marked):
     """Checks on the final head that were red, cannot-start, cancelled, unfinished (late or still pending) when the PR merged."""
     found = []
     checks = gh_pages(gh, "repos/%s/commits/%s/check-runs?per_page=100" % (repo, pr["headRefOid"]), "check_runs")
@@ -298,7 +313,7 @@ def _red_at_merge(gh, repo, pr, restricted):
         state = classify_check(check, pr["mergedAt"], 1 if executed is None else executed)
         if state is None:
             continue
-        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(check["name"], restricted),
+        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(check["name"], restricted, marked),
                       "state": state, "conclusion": check.get("conclusion"), "run_id": run_id,
                       "executed_steps": executed, "merged_at": pr["mergedAt"]})
     # Legacy commit statuses (status contexts) are not check runs; read them as well.
@@ -312,21 +327,37 @@ def _red_at_merge(gh, repo, pr, restricted):
                  else "red" if item["state"] in ("failure", "error") else None)
         if state is None:
             continue
-        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(item["context"], restricted),
+        found.append({"pr": pr["number"], "head_sha": short(pr["headRefOid"]), "check": redact(item["context"], restricted, marked),
                       "state": state, "conclusion": item["state"], "run_id": None, "executed_steps": None,
                       "merged_at": pr["mergedAt"]})
     return found
 
 
-def redact(text, restricted):
-    """Replace restricted repository names in free text so they never enter a snapshot."""
-    text = FULL_PIN.sub(lambda m: short(m.group(0)), " ".join(str(text).split()))
+def redact(text, restricted, marked=()):
+    """Replace restricted repository names in free text so they never enter a snapshot. A name-only repository
+    keeps its bare name, but a path, owner-qualified or tagged use of it (``name/x``, ``a/name``, ``name:x``,
+    ``name@x``, ``name#1``) is replaced, since the exemption covers the bare name only."""
+    text = FULL_PIN.sub(lambda m: short(m.group(0)).lower(), " ".join(str(text).split()))
+    for name in sorted(marked, key=len, reverse=True):
+        n = re.escape(name)
+        text = re.sub(r"(?i)[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#]\S" % (n, n, n),
+                      PLACEHOLDER, text)
     parts = [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
              for n in sorted(restricted, key=len, reverse=True)]
     if not parts:
         return text
     # One pass over alternatives, so a replacement is never re-matched by a later name.
     return re.sub("|".join(parts), PLACEHOLDER, text, flags=re.IGNORECASE)
+
+
+def collect_repo_retrying(gh, repo, since, restricted, marked):
+    """A repository that merges while it is being read is read again (a few times) rather than failing the run."""
+    for attempt in range(HEAD_ATTEMPTS):
+        try:
+            return collect_repo(gh, repo, since, restricted, marked)
+        except HeadMoved:
+            if attempt == HEAD_ATTEMPTS - 1:
+                raise
 
 
 def utc_now():
@@ -337,7 +368,8 @@ def collect_snapshot(manifest, since, date, started_at, gh=gh_json, clock=utc_no
     full, name_only, omitted = tracked_repositories(manifest)
     restricted = identity_contract.private_repository_names(manifest, allow_listed=True) | set(
         identity_contract.private_qualified_origins(manifest, allow_listed=True))
-    repositories = [collect_repo(gh, repo, since, restricted) for repo in full]
+    marked = {r["full_name"].split("/", 1)[1] for r in manifest["repositories"] if identity_contract.name_listed(r)}
+    repositories = [collect_repo_retrying(gh, repo, since, restricted, marked) for repo in full]
     return {"schema": SCHEMA, "date": date, "since": since, "started_at": started_at, "captured_at": clock(),
             "repositories": repositories, "name_only": [n.split("/", 1)[1] for n in name_only],
             "omitted_count": omitted}
@@ -450,9 +482,10 @@ def render(snap, manifest):
     older_note = []
     lines = [GENERATED_NOTE, "", "# Audiovisual estate status — %s (generated)" % snap["date"], "",
              "This page is generated, not hand-written, by `tools/status_snapshot.py` from live GitHub state "
-             "read between %s and %s. Pull requests are those merged since %s. Every pull request and commit cited below was "
-             "resolved against its repository when the snapshot was taken; the tool refuses to cite what it cannot "
-             "resolve. Commits are shown as %d-character prefixes. Regenerate with the command in "
+             "read between %s and %s. Pull requests are those merged since %s. Every merged pull request, its merge commit "
+             "and the `main` head were resolved against their repository when the snapshot was taken (merge commits "
+             "checked as ancestors of `main`), and the tool refuses to cite what it cannot resolve; run and check heads, "
+             "open pull requests and issues are as GitHub's API reported them. Commits are shown as %d-character prefixes. Regenerate with the command in "
              "[status-generation.md](../status-generation.md); do not edit this file." % (
                  snap["started_at"], snap["captured_at"], snap["since"], SHOW_LEN), "",
              "Reading the CI column: a run with **zero executed steps is `cannot-start`, never a pass**, whatever its "
@@ -650,6 +683,7 @@ def main(argv=None):
                 if target and target.exists():
                     raise StatusError("%s already exists: a later capture is a new dated page; pass --replace to overwrite" % target)
         manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        check_manifest(manifest)
         if args.from_snapshot:
             snap = json.loads(args.from_snapshot.read_text(encoding="utf-8"))
         else:

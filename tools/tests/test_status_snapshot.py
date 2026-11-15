@@ -427,6 +427,8 @@ class FakeGh:
                                              {"status": "completed", "conclusion": "skipped"}]}]}
             if path == "repos/o/r/actions/runs/101/jobs?per_page=100":
                 return {"jobs": [{"steps": []}]}
+            if path == "repos/o/r/actions/runs/998/jobs?per_page=100":
+                return {"jobs": [{"steps": [{"name": "Run x", "status": "completed", "conclusion": "success"}]}]}
             if path == "repos/o/r/actions/runs/102/jobs?per_page=100":
                 return {"jobs": [{"steps": []}], "total_count": 2 if self.many_jobs else 1}
             if path == "repos/o/r/commits/%s/check-runs?per_page=100" % full(4):
@@ -638,7 +640,7 @@ class CollectTests(unittest.TestCase):
     def test_marked_name_is_not_redacted_at_collection(self):
         calls = {}
         original = status.collect_repo
-        status.collect_repo = lambda gh, repo, since, restricted=(): calls.setdefault("r", set(restricted)) or {"full_name": repo}
+        status.collect_repo = lambda gh, repo, since, restricted=(), marked=(): calls.setdefault("r", set(restricted)) or {"full_name": repo}
         self.addCleanup(setattr, status, "collect_repo", original)
         status.collect_snapshot(manifest(), "2026-11-13", "2026-11-15", "a", gh=None, clock=lambda: "b")
         self.assertNotIn("named-thing", calls["r"])
@@ -652,6 +654,57 @@ class CollectTests(unittest.TestCase):
         status._gate_surface("see (restricted repository) here", m)  # the placeholder's own letters are not a leak
         with self.assertRaises(status.StatusError):
             status._gate_surface("the rest of it", m)
+
+    def test_malformed_manifest_marks_stop_the_run(self):
+        for change in ({"private": "no"}, {"status_listing": "full"}):
+            m = manifest()
+            m["repositories"][0].update(change)
+            with self.assertRaises(status.StatusError):
+                status.tracked_repositories(m)
+        m = manifest()
+        m["repositories"][0]["status_listing"] = "name-only"  # a public repository cannot carry the mark
+        with self.assertRaises(status.StatusError):
+            status.tracked_repositories(m)
+
+    def test_marked_name_uses_with_paths_or_tags_are_redacted_at_collection(self):
+        text = status.redact("see named-thing, a/named-thing, named-thing/src/x, named-thing:y, named-thing@v2, named-thing#3",
+                             set(), {"named-thing"})
+        self.assertTrue(text.startswith("see named-thing, "))
+        self.assertEqual(text.count(status.PLACEHOLDER), 5)
+        self.assertEqual(text.count("named-thing"), 1, "only the bare mention survives")
+        self.assertEqual(identity.listed_name_paths(text, manifest()), [])
+        self.assertEqual(status.redact("see named-thing, ok", set(), {"named-thing"}), "see named-thing, ok")
+
+    def test_uppercase_pins_are_shortened(self):
+        self.assertEqual(status.redact("Revert " + "AB" * 20, set()), "Revert " + "ab" * 6)
+
+    def test_unnamed_workflow_does_not_crash_collection(self):
+        class Unnamed(FakeGh):
+            def __call__(self, *args):
+                out = super().__call__(*args)
+                if args[-1].startswith("repos/o/r/actions/runs?") and "--slurp" not in args:
+                    out["workflow_runs"].append({"id": 998, "workflow_id": 9, "name": None, "status": "completed",
+                                                 "conclusion": "success", "event": "push", "head_sha": sha(1) + "e" * 28,
+                                                 "created_at": "2026-11-15T01:00:00Z"})
+                return out
+        repo = status.collect_repo(Unnamed(), "o/r", "2026-11-13")
+        self.assertIn("(unnamed workflow)", [r["workflow"] for r in repo["ci"]])
+
+    def test_a_head_that_moves_is_retried_then_refused(self):
+        attempts = []
+        original = status.collect_repo
+        def flaky(gh, repo, since, restricted=(), marked=()):
+            attempts.append(1)
+            if len(attempts) < 3:
+                raise status.HeadMoved("moved")
+            return {"full_name": repo}
+        status.collect_repo = flaky
+        self.addCleanup(setattr, status, "collect_repo", original)
+        self.assertEqual(status.collect_repo_retrying(None, "o/r", "d", set(), set()), {"full_name": "o/r"})
+        attempts.clear()
+        status.collect_repo = lambda *a, **k: (_ for _ in ()).throw(status.HeadMoved("always"))
+        with self.assertRaises(status.HeadMoved):
+            status.collect_repo_retrying(None, "o/r", "d", set(), set())
 
     def test_head_that_moves_during_collection_is_refused(self):
         with self.assertRaises(status.StatusError):
@@ -678,7 +731,7 @@ class CollectTests(unittest.TestCase):
         seen = []
         original = status.collect_repo
 
-        def spy(gh, repo, since, restricted=()):
+        def spy(gh, repo, since, restricted=(), marked=()):
             seen.append((repo, sorted(restricted)))
             return {"full_name": repo}
         status.collect_repo = spy
