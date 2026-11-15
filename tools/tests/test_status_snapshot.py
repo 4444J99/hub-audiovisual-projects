@@ -732,6 +732,24 @@ class CollectTests(unittest.TestCase):
             with self.assertRaises(status.StatusError):
                 status.render(snap, manifest())
 
+    def test_tagged_marked_name_does_not_swallow_the_next_name(self):
+        out = status.redact("named:secretrepo and named@x", {"secretrepo"}, {"named"})
+        self.assertNotIn("secretrepo", out)
+        self.assertNotIn("ecretrepo", out)
+        self.assertTrue(out.startswith(status.PLACEHOLDER + status.PLACEHOLDER))
+
+    def test_counters_and_head_citation_gaps_are_refused(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        for mutate in (lambda s: repo(s)["issues_updated"][0].update(number="<b>"),
+                       lambda s: repo(s)["issues_updated"][0].update(number=True),
+                       lambda s: repo(s).update(issues_open_count="2"),
+                       lambda s: repo(s).update(merged_other_base="x"),
+                       lambda s: repo(s)["main"].update(pr=None)):  # head is listed as merge commit of #12
+            snap = snapshot()
+            mutate(snap)
+            with self.assertRaises(status.StatusError):
+                status.render(snap, manifest())
+
     def test_legal_but_unusual_branch_names_render(self):
         snap = snapshot()
         snap["repositories"][0]["default_branch"] = "release+1#`x"

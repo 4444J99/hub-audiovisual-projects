@@ -51,7 +51,7 @@ PLACEHOLDER = "(restricted repository)"
 SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside longer tokens
 HEX = re.compile(r"[0-9a-f]+")
 TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
-WORD = re.compile(r"[a-z_]+")
+WORD = re.compile(r"[a-z0-9_-]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b", re.IGNORECASE)
@@ -359,7 +359,7 @@ def redact(text, restricted, marked=()):
     parts = []
     for name in sorted(marked, key=len, reverse=True):
         n = re.escape(name)
-        parts.append(r"[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#]\S" % (n, n, n))
+        parts.append(r"[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#](?=\S)" % (n, n, n))
     parts += [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
               for n in sorted(restricted, key=len, reverse=True)]
     if not parts:
@@ -429,7 +429,12 @@ def validate_snapshot(snap):
         for pr in repo.get("merged_prs", []):
             if not real_timestamp(pr.get("merged_at")):
                 raise StatusError("%s: merged pull request %r has no real merge time" % (name, pr.get("number")))
+        for field in ("issues_open_count", "merged_other_base"):
+            if type(repo.get(field, 0)) is not int or repo.get(field, 0) < 0:
+                raise StatusError("%s: %s is not a count" % (name, field))
         for issue in repo.get("issues_updated", []):
+            if type(issue.get("number")) is not int or issue["number"] <= 0:
+                raise StatusError("%s: issue number is not a positive integer" % name)
             if issue.get("state") not in ("open", "closed") or not real_timestamp(issue.get("updated_at")):
                 raise StatusError("%s: issue %r has an unknown state or update time" % (name, issue.get("number")))
         for run in repo.get("ci", []):
@@ -453,6 +458,8 @@ def validate_snapshot(snap):
             if type(pr.get("number")) is not int or pr.get("resolved") is not True or not sha_ok(pr.get("head_sha")):
                 raise StatusError("%s: open pull request %r is not resolved" % (name, pr.get("number")))
         by_number = {pr["number"]: pr for pr in repo.get("merged_prs", [])}
+        if main.get("pr") is None and any(p["merge_sha"] == main["sha"] for p in repo.get("merged_prs", [])):
+            raise StatusError("%s: main head is a listed merge commit but cites no pull request" % name)
         in_window = by_number.get(main.get("pr"))
         if in_window is not None and in_window["merge_sha"] != main["sha"]:
             raise StatusError("%s: main head cites pull request #%d whose merge commit is a different commit" % (name, main["pr"]))
