@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-15T16:29:16Z",
+  "captured_at": "2026-11-15T16:39:52Z",
   "date": "2026-11-15",
   "name_only": [],
   "omitted_count": 2,
@@ -135,11 +135,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "1da0fcadcb88",
+          "head_sha": "675b7ed47a25",
           "number": 44,
           "resolved": true,
           "title": "Generate status pages from live GitHub state (status_snapshot.py); regenerate 2026-11-15",
-          "updated_at": "2026-11-15T16:25:49Z"
+          "updated_at": "2026-11-15T16:32:09Z"
         }
       ],
       "red_at_merge": [
@@ -203,7 +203,7 @@
       ],
       "default_branch": "main",
       "full_name": "4444J99/tool-audiovisual-postproduction",
-      "issues_open_count": 10,
+      "issues_open_count": 15,
       "issues_updated": [
         {
           "number": 146,
@@ -282,6 +282,36 @@
           "state": "closed",
           "title": "QC: WebVTT text is never compared with the SRT text in the standalone QC",
           "updated_at": "2026-11-15T15:31:37Z"
+        },
+        {
+          "number": 189,
+          "state": "open",
+          "title": "demo verify: the mp4's sound is only checked for loudness; noise at the delivered loudness or a tone in the padding passes (P2)",
+          "updated_at": "2026-11-15T16:38:11Z"
+        },
+        {
+          "number": 190,
+          "state": "open",
+          "title": "demo verify: chroma planes are never checked although docs/DEMO.md says they are flat grey (P2)",
+          "updated_at": "2026-11-15T16:38:12Z"
+        },
+        {
+          "number": 191,
+          "state": "open",
+          "title": "demo run: replacing a directory is not atomic; a partial failure deletes the marker and locks the directory; --output . fails after deleting everything (P3)",
+          "updated_at": "2026-11-15T16:38:13Z"
+        },
+        {
+          "number": 192,
+          "state": "open",
+          "title": "demo: several failures exit 1 with a Python traceback instead of exit 2 and JSON (P3)",
+          "updated_at": "2026-11-15T16:38:14Z"
+        },
+        {
+          "number": 193,
+          "state": "open",
+          "title": "demo verify: demo-qc.json and the deterministic/stages/encoder/schema fields of demo-hashes.json are never compared (P3)",
+          "updated_at": "2026-11-15T16:38:15Z"
         }
       ],
       "listing": "full",
@@ -630,7 +660,16 @@
           "title": "fix(chain): host-independent chain hash (fill report sealed float intermediates)"
         }
       ],
-      "open_prs": [],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "82a5a895f9ac",
+          "number": 194,
+          "resolved": true,
+          "title": "fix(demo): judge the mp4's sound and chroma, not only loudness and luma (fresh cold review of 176)",
+          "updated_at": "2026-11-15T16:38:37Z"
+        }
+      ],
       "red_at_merge": [
         {
           "check": "CodeRabbit",
@@ -640,7 +679,7 @@
           "merged_at": "2026-11-13T21:30:48Z",
           "pr": 133,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Combined checks and Python package",
@@ -650,7 +689,7 @@
           "merged_at": "2026-11-13T21:30:48Z",
           "pr": 133,
           "run_id": 43511317830,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -660,7 +699,7 @@
           "merged_at": "2026-11-13T21:30:48Z",
           "pr": 133,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Combined checks and Python package",
@@ -670,7 +709,7 @@
           "merged_at": "2026-11-14T00:13:41Z",
           "pr": 136,
           "run_id": 43532719057,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -680,7 +719,7 @@
           "merged_at": "2026-11-14T00:13:41Z",
           "pr": 136,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Combined checks and Python package",
@@ -690,7 +729,7 @@
           "merged_at": "2026-11-14T00:23:05Z",
           "pr": 137,
           "run_id": 43533797792,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -700,7 +739,7 @@
           "merged_at": "2026-11-14T00:23:05Z",
           "pr": 137,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "CodeRabbit",
@@ -710,7 +749,7 @@
           "merged_at": "2026-11-14T00:27:18Z",
           "pr": 138,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Combined checks and Python package",
@@ -720,7 +759,7 @@
           "merged_at": "2026-11-14T00:27:18Z",
           "pr": 138,
           "run_id": 43534277556,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -730,7 +769,7 @@
           "merged_at": "2026-11-14T00:27:18Z",
           "pr": 138,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Sourcery review",
@@ -941,13 +980,13 @@
         },
         {
           "conclusion": "skipped",
-          "created_at": "2026-11-15T16:18:43Z",
+          "created_at": "2026-11-15T16:38:16Z",
           "event": "workflow_run",
           "executed_steps": 0,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
-          "run_id": 43734758361,
+          "run_id": 43736590839,
           "status": "completed",
           "verdict": "skipped",
           "workflow": "Current State Projection",
@@ -1190,7 +1229,7 @@
           "number": 125,
           "resolved": true,
           "title": "Fix the macOS WebKit gate's measurement races (issue 115)",
-          "updated_at": "2026-11-15T15:57:42Z"
+          "updated_at": "2026-11-15T16:38:54Z"
         }
       ],
       "red_at_merge": [
@@ -1202,7 +1241,7 @@
           "merged_at": "2026-11-13T17:37:56Z",
           "pr": 96,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "sustained-playback",
@@ -1232,7 +1271,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "CodeRabbit",
@@ -1242,7 +1281,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -1252,7 +1291,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "sustained-playback",
@@ -1262,7 +1301,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": 43535269037,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "test",
@@ -1272,7 +1311,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": 43535269191,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "wheel-smoke",
@@ -1282,7 +1321,7 @@
           "merged_at": "2026-11-14T00:36:04Z",
           "pr": 103,
           "run_id": 43535269061,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Cloudflare Pages",
@@ -1292,7 +1331,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "CodeRabbit",
@@ -1302,7 +1341,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "Sourcery review",
@@ -1312,7 +1351,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "semgrep-cloud-platform/scan",
@@ -1322,7 +1361,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": null,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "sustained-playback",
@@ -1332,7 +1371,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": 43542063966,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "test",
@@ -1342,7 +1381,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": 43542063991,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "wheel-smoke",
@@ -1352,7 +1391,7 @@
           "merged_at": "2026-11-14T01:41:15Z",
           "pr": 104,
           "run_id": 43542063951,
-          "state": "pending"
+          "state": "late"
         },
         {
           "check": "sustained-playback",
@@ -1464,7 +1503,7 @@
       ],
       "default_branch": "main",
       "full_name": "4444J99/timed-text-navigation-loop",
-      "issues_open_count": 1,
+      "issues_open_count": 13,
       "issues_updated": [
         {
           "number": 71,
@@ -1537,6 +1576,78 @@
           "state": "open",
           "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
           "updated_at": "2026-11-15T15:00:39Z"
+        },
+        {
+          "number": 91,
+          "state": "open",
+          "title": "verify: audio is downmixed to mono before checking, so a second voice in the stereo side channel passes (P1)",
+          "updated_at": "2026-11-15T16:39:11Z"
+        },
+        {
+          "number": 92,
+          "state": "open",
+          "title": "verify: audio is resampled to 22050 Hz before checking, so a tone above ~11 kHz passes (P1)",
+          "updated_at": "2026-11-15T16:39:12Z"
+        },
+        {
+          "number": 93,
+          "state": "open",
+          "title": "verify: MIN_TONE_RATIO 0.5 lets other sound carry as much energy as the cue inside every window (P2)",
+          "updated_at": "2026-11-15T16:39:14Z"
+        },
+        {
+          "number": 94,
+          "state": "open",
+          "title": "verify: the 60 ms guard band around each cue window is checked by nothing (P2)",
+          "updated_at": "2026-11-15T16:39:15Z"
+        },
+        {
+          "number": 95,
+          "state": "open",
+          "title": "verify: chroma is never compared, so a colour change that keeps luma passes (P2)",
+          "updated_at": "2026-11-15T16:39:16Z"
+        },
+        {
+          "number": 96,
+          "state": "open",
+          "title": "verify: duplicate JSON keys in receipt.json pass, so the 'pinned' claims text is pinned only in the parsed object (P2)",
+          "updated_at": "2026-11-15T16:39:17Z"
+        },
+        {
+          "number": 97,
+          "state": "open",
+          "title": "verify: receipt file.ffmpeg is still free text (P3)",
+          "updated_at": "2026-11-15T16:39:17Z"
+        },
+        {
+          "number": 98,
+          "state": "open",
+          "title": "verify: receipt.seed is never compared with the normalised run seed (P3)",
+          "updated_at": "2026-11-15T16:39:18Z"
+        },
+        {
+          "number": 99,
+          "state": "open",
+          "title": "verify: thresholds let larger edits through and the calibration comment is thinner than stated (P3)",
+          "updated_at": "2026-11-15T16:39:19Z"
+        },
+        {
+          "number": 100,
+          "state": "open",
+          "title": "verify: the whole frame stream is re-rendered and hashed before ffprobe looks at the MP4 (P3, cost)",
+          "updated_at": "2026-11-15T16:39:20Z"
+        },
+        {
+          "number": 101,
+          "state": "open",
+          "title": "verify: cue-track.wav that is a directory throws a raw EISDIR and exits 2 instead of a named failed check (P3)",
+          "updated_at": "2026-11-15T16:39:21Z"
+        },
+        {
+          "number": 102,
+          "state": "open",
+          "title": "tests/CI: with CI set and no ffmpeg the tests die on path.join(undefined) instead of a clear message; CI=false counts as true (P3)",
+          "updated_at": "2026-11-15T16:39:22Z"
         }
       ],
       "listing": "full",
@@ -1608,11 +1719,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "86921864850e",
+          "head_sha": "7f74373bec7d",
           "number": 90,
           "resolved": true,
           "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2",
-          "updated_at": "2026-11-15T16:29:57Z"
+          "updated_at": "2026-11-15T16:38:13Z"
         }
       ],
       "red_at_merge": [],
@@ -1620,5 +1731,6 @@
     }
   ],
   "schema": 1,
-  "since": "2026-11-13"
+  "since": "2026-11-13",
+  "started_at": "2026-11-15T16:37:39Z"
 }
