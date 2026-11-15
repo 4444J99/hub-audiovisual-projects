@@ -6,6 +6,8 @@ See the [functional identity rollout and validation](docs/functional-identity-ro
 
 Start with [the directory design](docs/directory-architecture.md), [the complete project catalog](docs/project-catalog.md), and [the migration report](docs/workspace-migration-report.md).
 
+**TouchDesigner status:** none of the TouchDesigner work in this estate has been run in TouchDesigner; it is verified only structurally and numerically. The first in-app check is in the postproduction repository's `docs/FX-TOUCHDESIGNER.md`.
+
 The [audiovisual estate status map](docs/audiovisual-status-2026-11-14.md) lines up each public repository's head, local gates and next steps.
 
 The [TMB spatial composition report](docs/tmb-spatial-integration-report.md) records
