@@ -261,31 +261,48 @@ def in_surface_scope(path):
     return path.endswith(SURFACE_SUFFIXES) and (path.startswith(("docs/", "manifests/")) or "/" not in path)
 
 
+def public_repository_names(manifest):
+    """Current names, historical aliases and explicitly public remotes of public repositories."""
+    names = set(PUBLIC_SELF)
+    for repo in manifest["repositories"]:
+        if not repo["private"]:
+            names.add(repo["full_name"].split("/", 1)[1])
+            names.update(repo[k] for k in ("key", "directory_slug", "local_path") if repo.get(k))
+        extra = repo.get("additional_remote")
+        if extra and extra.get("private") is False:
+            names.add(extra["full_name"].split("/", 1)[1])
+    return names
+
+
+def surface_facts(text, public):
+    """Source bindings in a document: non-public owner references and 40-hex commit pins."""
+    refs = sorted(set(OWNER_REF.findall(text)) - public)
+    commits = sorted(set(COMMIT.findall(text))) if re.search(r"private", text, re.IGNORECASE) else []
+    return {"refs": refs, "commits": commits}
+
+
 def validate_public_surface(paths, read, baseline, manifest):
     """Reject hand-authored private-source pointers in this public repository.
 
     Manifest checks only see manifest relationships, so a document naming a private
-    repository would bypass them. Pointers live in the private owner. Files outside
-    the reviewed baseline are inspected by content, under any filename.
+    repository would bypass them. Pointers live in the private owner. Every in-scope
+    document is inspected by content under any filename; ``baseline`` maps path to the
+    previously reviewed ``surface_facts`` and only those exact facts are tolerated, so
+    appending a new binding to an existing document is rejected.
     """
     bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
     if bad:
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
-    public = set(PUBLIC_SELF)
-    for repo in manifest["repositories"]:
-        if not repo["private"]:
-            public.add(repo["full_name"].split("/", 1)[1])
-    baseline = set(baseline)
+    public = public_repository_names(manifest)
     for path in paths:
-        if path in baseline or not in_surface_scope(path):
+        if not in_surface_scope(path):
             continue
-        text = read(path)
-        outside = sorted({m for m in OWNER_REF.findall(text)} - public)
-        if outside:
-            raise ValueError("Private source pointers belong in their private owner: %s names repository %s"
-                             % (path, outside[0]))
-        if COMMIT.search(text) and re.search(r"private", text, re.IGNORECASE):
-            raise ValueError("Private source pointers belong in their private owner: %s pairs a commit pin with a private source" % path)
+        facts = surface_facts(read(path), public)
+        reviewed = baseline.get(path, {"refs": [], "commits": []})
+        new = [x for kind in ("refs", "commits") for x in facts[kind] if x not in reviewed[kind]]
+        if new:
+            raise ValueError("Private source pointers belong in their private owner: %s adds source binding %s"
+                             % (path, new[0]))
 
 
 def validate_manifest(manifest):

@@ -1,80 +1,353 @@
 {
- "comment": "Reviewed baseline of hand-authored public documents that pre-date the private-pointer content check. Adding a path here requires a publication review.",
- "paths": [
-  "AGENTS.md",
-  "README.md",
-  "docs/acceptance/artistic-acceptance-2026-10-31.md",
-  "docs/acceptance/custody-acceptance-2026-10-31.md",
-  "docs/acceptance/physical-device-acceptance-2026-10-31.md",
-  "docs/acceptance/publication-acceptance-2026-10-31.md",
-  "docs/audiovisual-status-2026-11-14.md",
-  "docs/composition-evidence-lifecycle.md",
-  "docs/danse-private-custody.md",
-  "docs/danse-private-remote-custody.md",
-  "docs/danse-runtime-lifecycle-owner-packet.md",
-  "docs/danse-source-authority-reconciliation.md",
-  "docs/directory-architecture.md",
-  "docs/directory-validation-report.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/VERIFIER.md",
-  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/browser-acceptance.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/edition-receipt.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/failed-browser-launch.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/source-admission.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition/browser-acceptance.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json",
-  "docs/evidence/2026-10-10-tmb-spatial-composition/source-admission.json",
-  "docs/evidence/ace-pr-evidence-recovery-2026-10-25.json",
-  "docs/evidence/danse-host-pressure-recovery-2026-10-12.json",
-  "docs/evidence/danse-private-custody-2026-10-12-v2.json",
-  "docs/evidence/danse-private-custody-2026-10-12-v3.json",
-  "docs/evidence/danse-private-custody-2026-10-12.json",
-  "docs/evidence/danse-private-custody-recheck-2026-10-12.json",
-  "docs/evidence/danse-private-remote-preflight-2026-10-12.json",
-  "docs/evidence/danse-runtime-lifecycle-2026-10-12.json",
-  "docs/evidence/danse-source-authority-2026-10-12.json",
-  "docs/evidence/host-swap-diagnosis-2026-10-12.json",
-  "docs/evidence/hosted-ci-main-2026-10-12.json",
-  "docs/evidence/ingress-custody-attempt-2026-10-12.json",
-  "docs/evidence/ingress-custody-post-restart-2026-10-12.json",
-  "docs/evidence/ingress-custody-reconciliation-2026-10-18.json",
-  "docs/evidence/ingress-original-media-inventory-2026-10-12.json",
-  "docs/evidence/ingress-original-media-inventory-2026-10-18-v2.json",
-  "docs/evidence/layout-review-corrections-2026-10-12.json",
-  "docs/evidence/pr-reconciliation-2026-10-25.json",
-  "docs/evidence/pr8-reconciliation-2026-10-25.json",
-  "docs/evidence/source-remote-publication-2026-10-12.json",
-  "docs/evidence/t7recovery-custody-2026-10-12.json",
-  "docs/evidence/take48-camera-coverage-proof-2026-10-18.json",
-  "docs/evidence/teamwork-archive-2026-10-12.json",
-  "docs/evidence/unversioned-backup-2026-10-12.json",
-  "docs/evidence/unversioned-key-escrow-2026-10-12.json",
-  "docs/evidence/unversioned-ownership-2026-10-12.json",
-  "docs/evidence/workspace-layout-2.0.0.json",
-  "docs/functional-identity-rollout.md",
-  "docs/github-actions-billing-follow-up-2026-10-12.md",
-  "docs/god-here-touchdesigner-carryover-2026-10-13.md",
-  "docs/god-here-touchdesigner-message-impact-2026-10-13.md",
-  "docs/god-here-touchdesigner-source-2026-10-13.md",
-  "docs/helper-buildup-investigation.md",
-  "docs/migrations/2.0.0.md",
-  "docs/migrations/2.1.0.md",
-  "docs/naming-responsibility-contract.md",
-  "docs/project-catalog.md",
-  "docs/public-catalog.json",
-  "docs/reconciliation/ace-portfolio-reconciliation-2026-10-31.md",
-  "docs/reconciliation/touchdesigner-execution-admission-2026-10-31.md",
-  "docs/review-resolution-2026-10-12.md",
-  "docs/software-catalog.md",
-  "docs/source-register.md",
-  "docs/source-remote-publication-2026-10-12.md",
-  "docs/sources/ace-project-membership-2026-10-10.json",
-  "docs/teamwork-archive-2026-10-12.md",
-  "docs/tmb-spatial-integration-report.md",
-  "docs/unversioned-material-ownership-2026-10-12.md",
-  "docs/workspace-migration-report.md",
-  "docs/workstream-continuation.md",
-  "manifests/project-continuation.json",
-  "manifests/source-led-continuation-records.json",
-  "workspace-manifest.json"
- ]
+ "comment": "Reviewed source-binding facts already present in public documents before the content check. A document may keep exactly these; any other owner reference or commit pin requires a publication review.",
+ "paths": {
+  "docs/acceptance/custody-acceptance-2026-10-31.md": {
+   "commits": [],
+   "refs": [
+    "limen"
+   ]
+  },
+  "docs/danse-private-custody.md": {
+   "commits": [
+    "cdd27d53b635ce70a62b30860b591e25aa91cce8",
+    "e69a32ca1825ff7606f6ad6bd14e0a179acedb23",
+    "e719f28b9043ebe825b7b493f047b3c455fb5157",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "limen",
+    "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/danse-private-remote-custody.md": {
+   "commits": [],
+   "refs": [
+    "danse-private-custody"
+   ]
+  },
+  "docs/danse-source-authority-reconciliation.md": {
+   "commits": [
+    "2e105c30b69033fa665cfcaacff4c393f94dada3",
+    "73da6dc1c4339c9cc75c8253c7ef5173e4091256",
+    "e6dac59730f612a9f6ab035b615c3be6d179aac4",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/directory-architecture.md": {
+   "commits": [
+    "1dab672892563537daf6c3a1ed1e66f90d06a60e"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance",
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/ace-pr-evidence-recovery-2026-10-25.json": {
+   "commits": [
+    "0024ccc5125e98b7c0fa84251f5b179abf696368",
+    "034b2f58e3db4251f1fd773e4a244b897602d4b6",
+    "08b43f559c2359a783967d73791bfdd524dee98a",
+    "1db5e7bf26cf53e6d1e0900608fcb8aea978aca4",
+    "29074d4ce02ddbc001bf32c4a346a3948bcdef0d",
+    "32d97e84b5b59d22d47c64d3c6546d5645bf17fe",
+    "3cbc2dcac772b49252d1b3b21870065e78c70c6d",
+    "3e34f231287998d5d98d15e642d8c2f7deb5d558",
+    "4f4f191f28356f43d6b1425b69bd6a2d6e04af25",
+    "54b464dbdf3edaa3d2b9a8e54e3be7fa2fa077b0",
+    "5dee2da70aaf46c5ec38796124f3eebe1967660e",
+    "957dd7ad0f2603e982d3506517875b96caff7803",
+    "98a6e8b508ba92800d637fc5ff25493f73745436",
+    "9ca97794d2a501398dc77dc0b49cc38b6e65a683",
+    "a3744394dba1a5c32c9eb60eacba3869fd77343a",
+    "cec3ed71378bb71f3e4bfe65744587253b8f4ef7",
+    "d447053a31a107ad94295d42c66d3ee7a360a5f1",
+    "da65313a562ff91791ab0cf5897b0e5500351c51",
+    "dda211317bf8ff0f8255ab9f420b71901cbe4314",
+    "f308e79c032dccf3522e527831872c3ff2686c1b",
+    "fd64f325f0f84c9c5f0c5d77ce230389ddf9a71e"
+   ],
+   "refs": []
+  },
+  "docs/evidence/danse-host-pressure-recovery-2026-10-12.json": {
+   "commits": [
+    "cdd27d53b635ce70a62b30860b591e25aa91cce8",
+    "e719f28b9043ebe825b7b493f047b3c455fb5157"
+   ],
+   "refs": []
+  },
+  "docs/evidence/danse-private-custody-2026-10-12-v2.json": {
+   "commits": [
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": []
+  },
+  "docs/evidence/danse-private-custody-2026-10-12-v3.json": {
+   "commits": [
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": []
+  },
+  "docs/evidence/danse-private-remote-preflight-2026-10-12.json": {
+   "commits": [
+    "0561929334bb01fa230b717ff65b7fcdcc672e61",
+    "d0ae9773aa31c5828bd4c76adfb43b2078051fd7"
+   ],
+   "refs": [
+    "danse-private-custody"
+   ]
+  },
+  "docs/evidence/danse-runtime-lifecycle-2026-10-12.json": {
+   "commits": [
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": []
+  },
+  "docs/evidence/danse-source-authority-2026-10-12.json": {
+   "commits": [
+    "2e105c30b69033fa665cfcaacff4c393f94dada3",
+    "37a28eb9eea36f49bf5eda5bc253aa47c4c80dc8",
+    "73da6dc1c4339c9cc75c8253c7ef5173e4091256",
+    "817444bf5f1b649b681ec293fa12b5c30f77531b",
+    "933bf0035f15f732d6e4d3635c9f848d95fa6679",
+    "9f407ca7ac8303c29f20c7e3c332919fb540731c",
+    "b3e8c3308dc194af55c34c9d0e5ba4fc3235043c",
+    "d5b420dcd28f1d91e272b87ff9551a48a41c1042",
+    "da10bd9224f3ea3bffad6460156efc0147f0b241",
+    "e4d2937f09a652d5506e5d902bb4b80b6d31aed6",
+    "e6dac59730f612a9f6ab035b615c3be6d179aac4",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b",
+    "f6f570a0e9cdeb3118d2aea65e5521fa7a66b261"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/evidence/hosted-ci-main-2026-10-12.json": {
+   "commits": [
+    "cdd27d53b635ce70a62b30860b591e25aa91cce8",
+    "e5671673cbb33fc7488023825816ce6b94a92e1a",
+    "e719f28b9043ebe825b7b493f047b3c455fb5157"
+   ],
+   "refs": []
+  },
+  "docs/evidence/pr-reconciliation-2026-10-25.json": {
+   "commits": [
+    "0053cfec11a434642b7cd97b1557eaaf689f06de",
+    "064988dd56ce93fc0b11571be40bdbf99a165c63",
+    "0db7cc1dfcbf6d2942fc491ced5365fe409be65d",
+    "116b216b74fd3a0b55525667675ec40d65c0ffcf",
+    "17ca6ff9a3b774ae6020454a96735a5f6cfb777a",
+    "2552813a0ab57ce6db376519b49175019d4dc7b4",
+    "28298ac812b4286f15ccb8c06f36ee8fdb5e0099",
+    "2c0efc977fdcc35d36fcfb7bc186ee173506e1e5",
+    "33400d2745fa77a616778b944b9f0587e8e074af",
+    "33e55ef8f16332554d81e1cd9c4b927c3c819e9f",
+    "3681328ca505e5bc5674d209bb9ea45f1296e05c",
+    "3b816051226c68e6c0f71b6bff792253ed974733",
+    "40cd32b5763fa2e5da2a04079e2a76bd9985716f",
+    "43d512c4058ab6f5fd59fe583e689453c60ae330",
+    "4ee823b8b2b8cfc2a4013cce595bfef047860ae4",
+    "517ee8e664671439215960797573ab7657bd75d0",
+    "51f25ecfbff8e331f3ad263209c84c827e105447",
+    "5368d41a2fabbea0cea4b3781f6e025c0eb39306",
+    "5f72156609db943650895e2b566438faba74e15c",
+    "856d5b0521acc9858ac355fe8ac08934c305126a",
+    "89994de69bb389236b9c917ae534a7050633c34c",
+    "8a9216d843eb4509f500a9e2cedccc8d7e1af291",
+    "8b852fd1ac1be511ba5587c62f510bcff67e52fb",
+    "8f0ac34ef8cad85069945e437ab6b0e730ad6335",
+    "902ffdf205e588d66e1b70a2ee19b40166b5caba",
+    "90e7988d442dbab3d797082ee9ddf1d8875bb7e2",
+    "9aa6928d57142a0ff52793f5068cb29cc22d57d3",
+    "9ca97794d2a501398dc77dc0b49cc38b6e65a683",
+    "a0e7c38f86f9a3f0b6f352c6583ff7b7b33fc3a7",
+    "a409b06391194411233d2c651ae2359f7118eea6",
+    "ae1cf0e608eaf71debc52ae710c58b2e053d717d",
+    "b79eef6c53a5caa2428f7ea9e6ec5568843a7a9e",
+    "ba169522fc0d9ba7d32b9e2b398e2e806fbdf176",
+    "ba8867586f82898f52ecbcfc8f7a44ad59dd2e4c",
+    "bae5c6d7e4d36cea8bebeb47996a4c2b3efc58e7",
+    "d223f45d0dea64315d356f2dbd33dbff4a7764cc",
+    "da65313a562ff91791ab0cf5897b0e5500351c51",
+    "da7434250ad8b29a23b0203091966909ece5ad96",
+    "e69a32ca1825ff7606f6ad6bd14e0a179acedb23",
+    "e85ef19008ecbf74100cf01cf3b721d70a2b0c8c",
+    "ea2d019f1fb83b10c805707537fa1141abb27e14",
+    "ed7fbd26811d9082f5ee0e1503a3d13283b4fad9",
+    "f6baf74f69820369d96c06074f7f02846dcdcafc",
+    "fc20dab582dff9650b5eee62e29c3b0bb0e4b7f5"
+   ],
+   "refs": [
+    "limen"
+   ]
+  },
+  "docs/evidence/pr8-reconciliation-2026-10-25.json": {
+   "commits": [
+    "023b3139d22ee6839b5b938605f207c045eb386b",
+    "0c67df94d50cf2aae3a86a6452b772e364489ced",
+    "0e03dca346007e2fc80df22e66add2fcf28b93c9",
+    "1af539cbbeb62c86b1a265e4a68a7d9825757111",
+    "26a27b2887e6e9241dae5caa36dccbf9c83cf534",
+    "2fbe9274d7b4796d8c702f2c23b381ed7e6c83e8",
+    "3958fbb3204590d683838a5b79601aa37e6ff154",
+    "5205754859987d05d1817c0294102e245271366b",
+    "602693f45b1c5d91be4ddb216a19c41a94ee44ef",
+    "6e16d3b7b0c7dbe74bc21ec0e81d80ccf67d7afa",
+    "7533807a6b235e56a09798f5ac15f5eaca304439",
+    "78f82c50c960ca374e19a6f0cccab951af5b01a6",
+    "7d843b3ac6cb9991bbf770aa0c65b014701f8b07",
+    "80ed7819361e16d3d7beb29298b88d4241d790e2",
+    "8126a11f8292cddf8e1446c807db7199e01e1389",
+    "8edc5bbb7bda21fd5d60e22843f334bfcc9c2997",
+    "90ea6c98ba2dac128c1a243897e0dc0645f5e22c",
+    "9afa130e9f1246dae449b069d6238e48bb516c21",
+    "a0e7c38f86f9a3f0b6f352c6583ff7b7b33fc3a7",
+    "bc7e6b205565e940c7ea533e4a4db6c47fb3ba2c",
+    "c20a2b8868833adb598f2aae0409ed96da561034",
+    "c20f532a33a9ff0dfcfaab4614aea1431fdd2a5b",
+    "c3ec6ee4bcf80e9d27e250bc6efe019f22fc96b1",
+    "c55733b837cdf05fa07e8dc76fed3a8a0ad4b0a0",
+    "c7b8a1b68bdaf315b088646af359a3f0829b737a",
+    "c7e36661d74fc0de84c8f9f104299e1449a64d86",
+    "cd73a08c03e7edaae4f7e130c6061ffa79424ca6",
+    "d15ad0f6cd760affba28dbb4d67ecebddbb1d443",
+    "d9e33b93970763bc3c42233b903c2cf8e51b1625",
+    "df0b4a558afc04522b4933ced4200d1356480f80",
+    "e69a32ca1825ff7606f6ad6bd14e0a179acedb23",
+    "f10c62f6789913624d122349bdaa83b09d98dbe1",
+    "fa4081ae1cb94b356dc21711e3cde342aa16b8a3",
+    "faa3e3067fbda6751dc6b284ff8870639ffb433d",
+    "fb8cae970507003e297d3bf8e74217273fac8454"
+   ],
+   "refs": [
+    "limen"
+   ]
+  },
+  "docs/evidence/source-remote-publication-2026-10-12.json": {
+   "commits": [
+    "73da6dc1c4339c9cc75c8253c7ef5173e4091256",
+    "d5b420dcd28f1d91e272b87ff9551a48a41c1042",
+    "e4d2937f09a652d5506e5d902bb4b80b6d31aed6",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/github-actions-billing-follow-up-2026-10-12.md": {
+   "commits": [
+    "d1ab2d7fbd66857135ee33eecb26d30cb5304f08",
+    "e5671673cbb33fc7488023825816ce6b94a92e1a"
+   ],
+   "refs": []
+  },
+  "docs/god-here-touchdesigner-carryover-2026-10-13.md": {
+   "commits": [
+    "664a47aca1f68d84c3dd5440363b1a48ba32243f",
+    "c664fc79114b1c61ee7650af923eac8e2f710ca4"
+   ],
+   "refs": []
+  },
+  "docs/god-here-touchdesigner-source-2026-10-13.md": {
+   "commits": [
+    "664a47aca1f68d84c3dd5440363b1a48ba32243f"
+   ],
+   "refs": []
+  },
+  "docs/reconciliation/ace-portfolio-reconciliation-2026-10-31.md": {
+   "commits": [
+    "121a07104f93603af4bb5026511c8e50eb8938cc",
+    "1b97318a67db3b2d2938115cba821196a772918b",
+    "1d903f9d164d1ef29c0456aab5c9fe6e943802f5",
+    "2e781a6ec37a3ebd795c8f3372d68219aae9c79f",
+    "3543b341c7c6170fea27fbd7b4b67b2b864d7b0e",
+    "6c7751b98eb9c35c900f4d15281cba45978b4a8f",
+    "8ade8a2494415a2e3f9894df42262a01bf1b5ff6",
+    "9f407ca7ac8303c29f20c7e3c332919fb540731c",
+    "ba6da9c9f97ed7b70120c225874e86aa15e574ba",
+    "bec7072a131cbfd56305bf77d0f0af95974418b5",
+    "bffd13436645c6a777a6aa77f27190344a1dc6a7",
+    "dfcbbc30d020bac4ada705e125cb983ce42af620",
+    "e2b9edc898c2a98127f98638bda61522d050028e",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance",
+    "time-moment-brief"
+   ]
+  },
+  "docs/source-register.md": {
+   "commits": [
+    "1dab672892563537daf6c3a1ed1e66f90d06a60e"
+   ],
+   "refs": []
+  },
+  "docs/source-remote-publication-2026-10-12.md": {
+   "commits": [
+    "73da6dc1c4339c9cc75c8253c7ef5173e4091256",
+    "d5b420dcd28f1d91e272b87ff9551a48a41c1042",
+    "e4d2937f09a652d5506e5d902bb4b80b6d31aed6",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/tmb-spatial-integration-report.md": {
+   "commits": [
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "cbce79dcbcf34ce214ba77cd2aa8d8bb9ed32fa5",
+    "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180"
+   ],
+   "refs": []
+  },
+  "docs/unversioned-material-ownership-2026-10-12.md": {
+   "commits": [
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": []
+  },
+  "docs/workspace-migration-report.md": {
+   "commits": [
+    "2a28dd9930fce780abafd45e1f13eb161b65e945",
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "4b9b3cd34d22f458e3b2dd8b77714328b61be200",
+    "4bf06b76537dd48fe71840d01b2b21c785b2afec",
+    "51b57cb698f251825c0606993fa69c762e638ce4",
+    "60722c2dd47b839873823d545ed11d5d3bf2de0f",
+    "7fa91812369b5b60f09b733565c9a2507ea177ab",
+    "df076d1316aae780ab2148351813840f1fbbfbe9"
+   ],
+   "refs": []
+  },
+  "docs/workstream-continuation.md": {
+   "commits": [
+    "cdd27d53b635ce70a62b30860b591e25aa91cce8",
+    "e5671673cbb33fc7488023825816ce6b94a92e1a",
+    "e69a32ca1825ff7606f6ad6bd14e0a179acedb23",
+    "e719f28b9043ebe825b7b493f047b3c455fb5157"
+   ],
+   "refs": [
+    "limen"
+   ]
+  },
+  "manifests/project-continuation.json": {
+   "commits": [],
+   "refs": [
+    "the-thing-without-a-name-screendance",
+    "time-moment-brief"
+   ]
+  },
+  "workspace-manifest.json": {
+   "commits": [],
+   "refs": [
+    "the-thing-without-a-name-screendance",
+    "time-moment-brief"
+   ]
+  }
+ }
 }

@@ -3,6 +3,7 @@
 from copy import deepcopy
 import importlib.util
 import json
+import os
 import subprocess
 from pathlib import Path
 import unittest
@@ -68,8 +69,10 @@ class IdentityContract(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "frozen published baseline"):
             identity.validate_manifest(self.manifest)
 
-    def surface(self, files, baseline=()):
-        identity.validate_public_surface(list(files), files.__getitem__, baseline, self.manifest)
+    SHA = "0123456789abcdef0123456789abcdef01234567"
+
+    def surface(self, files, baseline=None):
+        identity.validate_public_surface(list(files), files.__getitem__, baseline or {}, self.manifest)
 
     def test_private_pointer_files_rejected(self):
         # Regression for closed PR 32: a hand-authored pointer to a private repository
@@ -79,23 +82,34 @@ class IdentityContract(unittest.TestCase):
                 self.surface({"README.md": "", path: ""})
 
     def test_pointer_under_any_filename_rejected_by_content(self):
-        sha = "0123456789abcdef0123456789abcdef01234567"
-        named = "Private repository 4444J99/some-private-study, commit %s, assets/a.wav." % sha
-        bare = "Source lives in a private repository; pinned commit %s." % sha
+        named = "Private repository 4444J99/some-private-study, commit %s, assets/a.wav." % self.SHA
+        bare = "Source lives in a private repository; pinned commit %s." % self.SHA
         for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md"):
             for text in (named, bare):
                 with self.assertRaisesRegex(ValueError, "private owner"):
                     self.surface({path: text})
 
-    def test_public_references_and_baseline_documents_allowed(self):
-        sha = "0123456789abcdef0123456789abcdef01234567"
-        self.surface({"docs/new-note.md": "See 4444J99/tool-audiovisual-postproduction and 4444J99/hub-audiovisual-projects."})
-        self.surface({"docs/legacy.md": "private repository 4444J99/old-owner at %s" % sha}, baseline=["docs/legacy.md"])
-        self.surface({"tools/x.py": "4444J99/anything %s private" % sha})
+    def test_baseline_document_cannot_gain_a_new_binding(self):
+        old = "private repository 4444J99/old-owner at %s" % self.SHA
+        base = {"README.md": identity.surface_facts(old, identity.public_repository_names(self.manifest))}
+        self.surface({"README.md": old}, base)
+        for added in ("\nprivate repository 4444J99/new-owner",
+                      "\nprivate pin fedcba9876543210fedcba9876543210fedcba98"):
+            with self.assertRaisesRegex(ValueError, "private owner"):
+                self.surface({"README.md": old + added}, base)
+
+    def test_public_names_aliases_and_public_remotes_allowed(self):
+        for ref in ("4444J99/tool-audiovisual-postproduction/pull/1", "4444J99/hub-audiovisual-projects",
+                    "https://github.com/4444J99/the-thing-without-a-name.git",
+                    "4444J99/audiovisual-media-postproduction-system/pull/59", "4444J99/simvltanea/pull/32"):
+            self.surface({"docs/new-note.md": "See %s" % ref})
+        self.surface({"tools/x.py": "4444J99/anything %s private" % self.SHA})
 
     def test_tracked_files_contain_no_private_pointers(self):
-        tracked = subprocess.run(["git", "ls-files"], cwd=TOOLS.parent, check=True,
-                                 capture_output=True, text=True).stdout.splitlines()
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=TOOLS.parent, check=True, env=env,
+                             capture_output=True, text=True).stdout
+        tracked = [p for p in out.split("\0") if p]
         self.assertTrue(tracked)
         baseline = json.loads((TOOLS / "public_surface_baseline.json").read_text())["paths"]
         self.assertTrue(set(baseline) <= set(tracked))
