@@ -32,10 +32,10 @@ Read on 2026-11-15 at write time. The 2026-11-15 table is stale; this one replac
 Specific corrections:
 
 - **Postproduction `712ecc2` (#175).** The 2026-11-15 page said its `main` run had no conclusion yet. That run, 43725424891 (Verify production system), is success. `main` has since moved to `53bab60` (#176).
-- **Compositor #121.** The 2026-11-15 page and its silence-rule table called it open. It merged on 2026-11-15 at 14:52 UTC (merge commit `97070de`). The compositor's browser tests therefore now carry the silent launch helper on `main`, and the sentence saying they did not is withdrawn. Its head was red on `sustained-playback` when it merged (section 1). #110 remains open.
+- **Compositor #121.** The 2026-11-15 page and its silence-rule table called it open. It merged on 2026-11-15 at 14:52 UTC (merge commit `97070de`). The compositor's browser tests therefore now carry the silent launch helper on `main`, and the sentence saying they did not is withdrawn. Its head was red on `sustained-playback` when it merged: run 43722666733 (attempt 1, never re-run) concluded failure at 14:29 UTC, 23 minutes before the 14:52 UTC merge (section 1). #110 remains open.
 - **Compositor head.** `f4abaa9` (#119) is no longer the head; `97070de` is.
 - **Loop-text repository.** `88b6a79` (#77) is no longer the head; `292984a` (#88, string-aware comment stripping in the silent launch lint, fail-closed) is.
-- **Hub.** `59c3cc5` (#38) is no longer the head; `d6ac9c7` is the 2026-11-15 page itself (#39).
+- **Hub.** `59c3cc5` (#38) is no longer the head; `d6ac9c7` (#39, the 2026-11-15 page itself) is.
 
 The 2026-11-15 page's silence-rule table is otherwise unchanged: hub #36 and #38, postproduction #172 and #174, timed-text-navigation-loop #74 and #77 are merged. Postproduction [issue 186](https://github.com/4444J99/tool-audiovisual-postproduction/issues/186) is open and records a residual: the silent init script cannot reach media inside a closed declarative shadow root under WebKit.
 
