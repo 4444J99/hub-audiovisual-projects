@@ -46,11 +46,11 @@ HUB = "4444J99/hub-audiovisual-projects"
 SHA_LEN = 12
 SHOW_LEN = 7
 HEX = re.compile(r"[0-9a-f]+")
-NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
+NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b")
 RED_CONCLUSIONS = {"failure", "timed_out", "action_required", "startup_failure"}
-MERGE_STATES = ("red", "cannot-start", "late", "pending", "cancelled")
+MERGE_STATES = ("red", "cannot-start", "no-steps", "late", "pending", "cancelled")
 EXECUTED = {"success", "failure", "cancelled", "timed_out"}
 LIST_LIMIT = 300
 RUN_WINDOW = 100  # newest default-branch runs examined; a workflow idle for longer is not listed
@@ -91,11 +91,11 @@ SYNTHETIC_STEPS = ("Set up job", "Complete job")
 
 def count_executed(steps):
     """Steps of the workflow itself that ran: completed with a conclusion other than skipped. GitHub's own
-    'Set up job', 'Complete job' and 'Post ...' bookkeeping steps do not count, so a job whose every real step
+    'Set up job', 'Complete job' and 'Post Run ...' bookkeeping steps do not count, so a job whose every real step
     was skipped, or that died before its first step, has zero."""
     return sum(1 for s in steps or []
                if s.get("status") == "completed" and s.get("conclusion") in EXECUTED
-               and s.get("name") not in SYNTHETIC_STEPS and not str(s.get("name", "")).startswith("Post "))
+               and s.get("name") not in SYNTHETIC_STEPS and not str(s.get("name", "")).startswith("Post Run "))
 
 
 def verdict(status, conclusion, executed):
@@ -123,6 +123,8 @@ def classify_check(check, merged_at, executed):
     if done > merged_at:
         return "late"
     conclusion = check.get("conclusion")
+    if conclusion == "success":
+        return "no-steps" if executed == 0 else None
     if conclusion in RED_CONCLUSIONS:
         return "cannot-start" if executed == 0 else "red"
     if conclusion == "cancelled":
@@ -205,6 +207,8 @@ def collect_repo(gh, repo, since, restricted=()):
                    "jobs": len(jobs), "executed_steps": executed,
                    "verdict": verdict(run["status"], run["conclusion"], executed)})
 
+    if gh("api", "repos/%s/commits/%s" % (repo, branch))["sha"] != head_sha:
+        raise StatusError("%s: %s moved while its state was being read; run again" % (repo, branch))
     issues_updated = gh("issue", "list", "-R", repo, "--state", "all", "--search", "updated:>=%s" % since,
                         "--limit", str(LIST_LIMIT), "--json", "number,title,state,updatedAt")
     issues_open = gh("issue", "list", "-R", repo, "--state", "open", "--limit", "500", "--json", "number")
@@ -241,7 +245,7 @@ def _red_at_merge(gh, repo, pr, restricted):
         match = ACTIONS_JOB.search(check.get("details_url") or "")
         if match:
             run_id = int(match.group(1))
-            if check.get("status") == "completed" and check.get("conclusion") in RED_CONCLUSIONS:
+            if check.get("status") == "completed" and check.get("conclusion") in RED_CONCLUSIONS | {"success"}:
                 job = gh("api", "repos/%s/actions/jobs/%s" % (repo, match.group(2)))
                 executed = count_executed(job.get("steps"))
         state = classify_check(check, pr["mergedAt"], 1 if executed is None else executed)
@@ -255,7 +259,7 @@ def _red_at_merge(gh, repo, pr, restricted):
 
 def redact(text, restricted):
     """Replace restricted repository names in free text so they never enter a snapshot."""
-    text = " ".join(str(text).split())
+    text = FULL_PIN.sub(lambda m: short(m.group(0)), " ".join(str(text).split()))
     for name in sorted(restricted, key=len, reverse=True):
         text = re.sub(r"(?<![A-Za-z0-9_.-])%s(?![A-Za-z0-9_-])" % re.escape(name), "(restricted repository)",
                       text, flags=re.IGNORECASE)
@@ -272,7 +276,8 @@ def collect_snapshot(manifest, since, date, started_at, gh=gh_json, clock=utc_no
         identity_contract.private_qualified_origins(manifest))
     repositories = [collect_repo(gh, repo, since, restricted) for repo in full]
     return {"schema": SCHEMA, "date": date, "since": since, "started_at": started_at, "captured_at": clock(),
-            "repositories": repositories, "name_only": name_only, "omitted_count": omitted}
+            "repositories": repositories, "name_only": [n.split("/", 1)[1] for n in name_only],
+            "omitted_count": omitted}
 
 
 # ----------------------------------------------------------------------- render
@@ -295,7 +300,7 @@ def validate_snapshot(snap):
             or type(snap.get("omitted_count")) is not int):
         raise StatusError("snapshot lacks started_at, captured_at or omitted_count")
     if not all(isinstance(n, str) and NAME.fullmatch(n) for n in snap.get("name_only", [])):
-        raise StatusError("snapshot name_only must be a list of owner/name repository names")
+        raise StatusError("snapshot name_only must be a list of bare repository names")
     for repo in snap["repositories"]:
         name = repo.get("full_name", "?")
         if repo.get("listing") != "full" or repo.get("visibility_live") != "public":
@@ -322,7 +327,7 @@ def validate_snapshot(snap):
             steps = entry.get("executed_steps")
             if steps is not None and (type(steps) is not int or steps < 0):
                 raise StatusError("%s: red-at-merge step count is not a count" % name)
-            if entry["state"] in ("red", "cannot-start") and steps is not None and (entry["state"] == "cannot-start") != (steps == 0):
+            if entry["state"] in ("red", "cannot-start", "no-steps") and steps is not None and (entry["state"] != "red") != (steps == 0):
                 raise StatusError("%s: red-at-merge state %r contradicts its %d executed steps" % (name, entry["state"], steps))
             if entry.get("state") not in MERGE_STATES:
                 raise StatusError("%s: unknown red-at-merge state %r" % (name, entry.get("state")))
@@ -449,7 +454,7 @@ def render(snap, manifest):
               "Checks on a pull request's final head that were red, unable to start, cancelled or not yet finished when "
               "it merged. GitHub keeps only the latest attempt of a check, so the state describes that attempt: `late` "
               "means it finished after the merge time (a slow check or a later re-run; the column after it gives the "
-              "conclusion), `pending` means it had not finished when the snapshot was read. `cannot-start` means the check's job executed zero steps; it is startup noise, recorded with "
+              "conclusion), `pending` means it had not finished when the snapshot was read. `no-steps` means a check concluded success with zero executed steps (a hollow pass). `cannot-start` means the check's job executed zero steps; it is startup noise, recorded with "
               "its run id, and is not a failing test. A step count of `not observed` means its steps were not read (an external "
               "check, or a check that had not finished).", ""]
     any_red = False
@@ -473,7 +478,7 @@ def render(snap, manifest):
               "Tracked and listed in full: %s." % ", ".join(r["full_name"].split("/", 1)[1] for r in snap["repositories"])]
     if snap.get("name_only"):
         lines += ["", "Listed by name only (the manifest marks the name public-safe): %s." % ", ".join(
-            "`%s`" % n.split("/", 1)[1] for n in snap["name_only"])]
+            "`%s`" % n for n in snap["name_only"])]
     lines += ["", "%d manifest repositories are omitted because the manifest does not mark them public-safe; their "
               "names, pull requests and contents are not described here." % snap["omitted_count"], "",
               "This page asserts no artistic, device, delivery or custody acceptance for any work. Each repository's "
@@ -499,14 +504,18 @@ def _gate_surface(page, manifest):
 # -------------------------------------------------------------------------- cli
 
 
-def write_atomic(path, text):
-    """Write beside the target and rename, so a failed run leaves no partial or unvalidated file."""
-    tmp = path.with_name(path.name + ".tmp")
+def write_all(files):
+    """Write every (path, text) beside its target first, then rename them all, so a failed run leaves no
+    partial, unvalidated or orphaned file."""
+    staged = [(path.with_name(path.name + ".tmp"), path, text) for path, text in files]
     try:
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
+        for tmp, _, text in staged:
+            tmp.write_text(text, encoding="utf-8")
+        for tmp, path, _ in staged:
+            tmp.replace(path)
     finally:
-        tmp.unlink(missing_ok=True)
+        for tmp, _, _ in staged:
+            tmp.unlink(missing_ok=True)
 
 
 def main(argv=None):
@@ -523,6 +532,10 @@ def main(argv=None):
     try:
         if args.check and not (args.from_snapshot and args.out):
             raise StatusError("--check needs --from-snapshot and --out")
+        if not args.from_snapshot and bool(args.out) != bool(args.snapshot_out):
+            raise StatusError("live mode writes a page and its snapshot together: give both --out and --snapshot-out")
+        if args.from_snapshot and args.snapshot_out:
+            raise StatusError("--snapshot-out applies to live mode only")
         manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
         if args.from_snapshot:
             snap = json.loads(args.from_snapshot.read_text(encoding="utf-8"))
@@ -540,10 +553,11 @@ def main(argv=None):
                 print("status_snapshot: %s differs from its snapshot rendering" % args.out, file=sys.stderr)
                 return 1
             return 0
-        if not args.from_snapshot and args.snapshot_out:
-            write_atomic(args.snapshot_out, json.dumps(snap, indent=2, sort_keys=True) + "\n")
         if args.out:
-            write_atomic(args.out, page)
+            files = [(args.out, page)]
+            if not args.from_snapshot:
+                files.append((args.snapshot_out, json.dumps(snap, indent=2, sort_keys=True) + "\n"))
+            write_all(files)
         else:
             sys.stdout.write(page)
     except (StatusError, ValueError, KeyError, TypeError, IndexError, AttributeError, OSError) as exc:

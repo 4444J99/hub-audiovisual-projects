@@ -66,7 +66,7 @@ def snapshot():
         "issues_updated": [{"number": 7, "title": "An issue", "state": "closed", "updated_at": "2026-11-15T09:00:00Z"}],
     }
     return {"schema": 1, "date": "2026-11-15", "since": "2026-11-13", "started_at": "2026-11-15T15:50:00Z",
-            "captured_at": "2026-11-15T16:00:00Z", "repositories": [repo], "name_only": ["4444J" "99/named-thing"], "omitted_count": 1}
+            "captured_at": "2026-11-15T16:00:00Z", "repositories": [repo], "name_only": ["named-thing"], "omitted_count": 1}
 
 
 class VerdictTests(unittest.TestCase):
@@ -196,7 +196,7 @@ class NameOnlyTests(unittest.TestCase):
     def test_only_generated_status_pages_may_name_a_marked_repository(self):
         m = manifest()
         read = lambda p: identity.GENERATED_STATUS_MARKER + " -->\nsee named-thing"  # noqa: E731
-        identity.validate_public_surface(["docs/status/2026-11-15.md"], read, {}, m)
+        identity.validate_public_surface(["docs/status/2026-11-15.md", "docs/status/2026-11-15.snapshot.json"], read, {}, m)
         with self.assertRaises(ValueError):
             identity.validate_public_surface(["docs/other.md"], read, {}, m)
         with self.assertRaises(ValueError):
@@ -205,17 +205,20 @@ class NameOnlyTests(unittest.TestCase):
     def test_exemption_requires_the_generated_marker(self):
         m = manifest()
         marked = identity.GENERATED_STATUS_MARKER + " -->\nsee named-thing"
-        identity.validate_public_surface(["docs/status/a.md"], lambda p: marked, {}, m)
+        both = ["docs/status/a.md", "docs/status/a.snapshot.json"]
+        identity.validate_public_surface(both, lambda p: marked, {}, m)
         with self.assertRaises(ValueError):
-            identity.validate_public_surface(["docs/status/a.md"], lambda p: "see named-thing", {}, m)
+            identity.validate_public_surface(["docs/status/a.md"], lambda p: marked, {}, m)  # no snapshot beside it
+        with self.assertRaises(ValueError):
+            identity.validate_public_surface(both, lambda p: "see named-thing", {}, m)
         with self.assertRaises(ValueError):
             identity.validate_public_surface(["docs/status/a.json"], lambda p: marked, {}, m)
 
     def test_snapshot_beside_a_generated_page_is_exempt_but_a_lone_one_is_not(self):
         m = manifest()
         page = identity.GENERATED_STATUS_MARKER + " -->\npage"
-        files = {"docs/status/a.md": page, "docs/status/a.snapshot.json": '{"name_only": ["x/named-thing"]}',
-                 "docs/status/b.snapshot.json": '{"name_only": ["x/named-thing"]}'}
+        files = {"docs/status/a.md": page, "docs/status/a.snapshot.json": '{"name_only": ["named-thing"]}',
+                 "docs/status/b.snapshot.json": '{"name_only": ["named-thing"]}'}
         identity.validate_public_surface(["docs/status/a.md", "docs/status/a.snapshot.json"], files.get, {}, m)
         with self.assertRaises(ValueError):
             identity.validate_public_surface(["docs/status/b.snapshot.json"], files.get, {}, m)
@@ -230,13 +233,13 @@ class NameOnlyTests(unittest.TestCase):
         self.assertIn("x/named-origin", identity.private_qualified_origins(m, allow_listed=True))
 
     def test_mark_on_a_public_repository_is_rejected(self):
-        real = json.loads((ROOT / "workspace-manifest.json").read_text())
+        real = json.loads((ROOT / "workspace-manifest.json").read_text(encoding="utf-8"))
         next(r for r in real["repositories"] if not r["private"])["status_listing"] = "name-only"
         with self.assertRaises(ValueError):
             identity.validate_manifest(real)
 
     def test_mark_is_accepted_by_the_real_manifest_contract_and_bad_values_are_not(self):
-        real = json.loads((ROOT / "workspace-manifest.json").read_text())
+        real = json.loads((ROOT / "workspace-manifest.json").read_text(encoding="utf-8"))
         identity.validate_manifest(real)
         marked = copy.deepcopy(real)
         next(r for r in marked["repositories"] if r["private"])["status_listing"] = "name-only"
@@ -327,7 +330,7 @@ class RefusalTests(unittest.TestCase):
 
     def test_name_only_entries_must_be_owner_slash_name(self):
         snap = snapshot()
-        snap["name_only"] = ["x`y"]
+        snap["name_only"] = ["x`y", "o/r"]
         with self.assertRaises(status.StatusError):
             status.render(snap, manifest())
 
@@ -350,7 +353,9 @@ class FakeGh:
     """Answers the gh calls collect_repo makes from fixed data and records every call."""
 
     def __init__(self, private=False, bad_merge=False, truncate=False, empty_message=False, many_checks=False,
-                 many_jobs=False):
+                 many_jobs=False, head_moves=False):
+        self.head_moves = head_moves
+        self.head_reads = 0
         self.empty_message = empty_message
         self.many_checks = many_checks
         self.many_jobs = many_jobs
@@ -371,7 +376,8 @@ class FakeGh:
             if path == "repos/o/r":
                 return {"private": self.private, "visibility": "private" if self.private else "public", "default_branch": "main"}
             if path == "repos/o/r/commits/main":
-                return {"sha": full(1), "commit": {"message": "" if self.empty_message else "head subject\n\nbody", "committer": {"date": "2026-11-15T10:00:00Z"}}}
+                self.head_reads += 1
+                return {"sha": full(77 if self.head_moves and self.head_reads > 1 else 1), "commit": {"message": "" if self.empty_message else "head subject\n\nbody", "committer": {"date": "2026-11-15T10:00:00Z"}}}
             if path == "repos/o/r/commits/%s/pulls" % full(1):
                 return [{"number": 12, "merged_at": "2026-11-15T10:00:00Z", "merge_commit_sha": full(1)}]
             if path.startswith("repos/o/r/compare/"):
@@ -394,13 +400,15 @@ class FakeGh:
             if path == "repos/o/r/actions/runs/102/jobs?per_page=100":
                 return {"jobs": [{"steps": []}], "total_count": 2 if self.many_jobs else 1}
             if path == "repos/o/r/commits/%s/check-runs?per_page=100" % full(4):
-                return {"total_count": 101 if self.many_checks else 6, "check_runs": [
+                return {"total_count": 101 if self.many_checks else 7, "check_runs": [
                     {"id": 1, "name": "test", "status": "completed", "conclusion": "failure",
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/55/job/66"},
                     {"id": 2, "name": "startup", "status": "completed", "conclusion": "failure",
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/56/job/67"},
                     {"id": 3, "name": "pages", "status": "completed", "conclusion": "failure",
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://pages.example/build"},
+                    {"id": 7, "name": "hollow", "status": "completed", "conclusion": "success",
+                     "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/60/job/71"},
                     {"id": 6, "name": "slow", "status": "completed", "conclusion": "success",
                      "completed_at": "2026-11-15T10:30:00Z", "details_url": "https://github.com/o/r/actions/runs/59/job/70"},
                     {"id": 4, "name": "late", "status": "in_progress", "conclusion": None, "completed_at": None,
@@ -411,6 +419,13 @@ class FakeGh:
                 return {"steps": [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "failure"}]}
             if path == "repos/o/r/actions/jobs/67":
                 return {"steps": []}
+            if path == "repos/o/r/actions/jobs/69":
+                return {"steps": [{"name": "Run ok", "status": "completed", "conclusion": "success"}]}
+            if path == "repos/o/r/actions/jobs/70":
+                return {"steps": [{"name": "Run slow", "status": "completed", "conclusion": "success"}]}
+            if path == "repos/o/r/actions/jobs/71":
+                return {"steps": [{"name": "Set up job", "status": "completed", "conclusion": "success"},
+                                  {"name": "Run all", "status": "completed", "conclusion": "skipped"}]}
         if args[:2] == ("pr", "list"):
             if "merged" in args:
                 count = status.LIST_LIMIT if self.truncate else 1
@@ -443,11 +458,11 @@ class CollectTests(unittest.TestCase):
         by_id = {r["workflow_id"]: r for r in repo["ci"]}
         self.assertEqual(len(repo["ci"]), 3, "workflows sharing a display name stay separate")
         self.assertEqual(by_id[3]["verdict"], "cancelled")
-        self.assertFalse([c for c in gh.calls if c[1].endswith("/jobs/69")], "passing checks do not fetch jobs")
+        self.assertTrue([c for c in gh.calls if c[-1].endswith("/jobs/71")], "successful checks are read for hollow passes")
         states = {e["check"]: (e["state"], e["executed_steps"], e["run_id"]) for e in repo["red_at_merge"]}
         self.assertEqual(states, {"test": ("red", 2, 55), "startup": ("cannot-start", 0, 56),
                                   "pages": ("red", None, None), "late": ("pending", None, 57),
-                                  "slow": ("late", None, 59)})
+                                  "slow": ("late", 1, 59), "hollow": ("no-steps", 0, 60)})
         self.assertEqual(repo["issues_open_count"], 2)
         self.assertEqual(repo["issues_updated"][0]["state"], "closed")
         status.validate_snapshot({"schema": 1, "date": "2026-11-15", "since": "2026-11-13", "started_at": "w", "captured_at": "x",
@@ -465,6 +480,13 @@ class CollectTests(unittest.TestCase):
         repo = status.collect_repo(FakeGh(), "o/r", "2026-11-13", restricted={"startup", "Dead"})
         self.assertIn("(restricted repository)", [r["workflow"] for r in repo["ci"]])
         self.assertIn("(restricted repository)", [e["check"] for e in repo["red_at_merge"]])
+
+    def test_head_that_moves_during_collection_is_refused(self):
+        with self.assertRaises(status.StatusError):
+            status.collect_repo(FakeGh(head_moves=True), "o/r", "2026-11-13")
+
+    def test_bookkeeping_titles_and_pins_are_shortened_at_collection(self):
+        self.assertEqual(status.redact("Revert " + "ab" * 20, set()), "Revert " + "ab" * 6)
 
     def test_empty_commit_message_is_tolerated(self):
         repo = status.collect_repo(FakeGh(empty_message=True), "o/r", "2026-11-13")
@@ -493,7 +515,7 @@ class CollectTests(unittest.TestCase):
         self.assertEqual((snap["started_at"], snap["captured_at"]), ("start", "end"))
         self.assertEqual([r for r, _ in seen], [status.HUB, "4444J" "99/alpha-public"])
         self.assertIn("hidden-thing", seen[0][1])
-        self.assertEqual((snap["name_only"], snap["omitted_count"]), (["4444J" "99/named-thing"], 1))
+        self.assertEqual((snap["name_only"], snap["omitted_count"]), (["named-thing"], 1))
 
     def test_omitted_repository_is_never_collected(self):
         full, _, _ = status.tracked_repositories(manifest())
@@ -506,8 +528,8 @@ class CliTests(unittest.TestCase):
         self.dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.dir.cleanup)
         self.tmp = Path(self.dir.name)
-        (self.tmp / "manifest.json").write_text(json.dumps(manifest()))
-        (self.tmp / "snap.json").write_text(json.dumps(snapshot()))
+        (self.tmp / "manifest.json").write_text(json.dumps(manifest()), encoding="utf-8")
+        (self.tmp / "snap.json").write_text(json.dumps(snapshot()), encoding="utf-8")
 
     def cli(self, *args):
         out, err = io.StringIO(), io.StringIO()
@@ -520,20 +542,20 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         page = self.tmp / "page.md"
         self.assertEqual(self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(page))[0], 0)
-        self.assertEqual(page.read_text(), out)
+        self.assertEqual(page.read_text(encoding="utf-8"), out)
 
     def test_check_detects_drift(self):
         page = self.tmp / "page.md"
         self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(page))
         self.assertEqual(self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(page), "--check")[0], 0)
-        page.write_text(page.read_text() + "hand edit\n")
+        page.write_text(page.read_text(encoding="utf-8") + "hand edit\n", encoding="utf-8")
         self.assertEqual(self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(page), "--check")[0], 1)
         self.assertEqual(self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(self.tmp / "none.md"), "--check")[0], 1)
 
     def test_unresolved_snapshot_exits_two(self):
         bad = snapshot()
         bad["repositories"][0]["merged_prs"][0]["resolved"] = False
-        (self.tmp / "bad.json").write_text(json.dumps(bad))
+        (self.tmp / "bad.json").write_text(json.dumps(bad), encoding="utf-8")
         code, out, err = self.cli("--from-snapshot", str(self.tmp / "bad.json"))
         self.assertEqual((code, out), (2, ""))
         self.assertIn("refused", err)
@@ -556,8 +578,19 @@ class CliTests(unittest.TestCase):
         self.fake_collect(snapshot())
         out, snap = self.tmp / "p.md", self.tmp / "s.json"
         self.assertEqual(self.cli("--since", "2026-11-13", "--out", str(out), "--snapshot-out", str(snap))[0], 0)
-        self.assertEqual(json.loads(snap.read_text()), snapshot())
+        self.assertEqual(json.loads(snap.read_text(encoding="utf-8")), snapshot())
         self.assertEqual(self.cli("--from-snapshot", str(snap), "--out", str(out), "--check")[0], 0)
+
+    def test_live_mode_writes_page_and_snapshot_together_or_not_at_all(self):
+        self.fake_collect(snapshot())
+        out, snap = self.tmp / "p.md", self.tmp / "s.json"
+        self.assertEqual(self.cli("--since", "2026-11-13", "--out", str(out))[0], 2)
+        self.assertEqual(self.cli("--since", "2026-11-13", "--snapshot-out", str(snap))[0], 2)
+        self.assertEqual(self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--snapshot-out", str(snap))[0], 2)
+        blocked = self.tmp / "nodir" / "s.json"
+        self.assertEqual(self.cli("--since", "2026-11-13", "--out", str(out), "--snapshot-out", str(blocked))[0], 2)
+        self.assertFalse(out.exists(), "page must not be written when the snapshot cannot be")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["manifest.json", "snap.json"])
 
     def test_check_needs_snapshot_and_out(self):
         self.assertEqual(self.cli("--check", "--since", "2026-11-13")[0], 2)
@@ -576,31 +609,31 @@ class CommittedPageTests(unittest.TestCase):
     """Generated pages in the repository must equal the rendering of their snapshot."""
 
     def test_every_committed_page_matches_its_snapshot(self):
-        repo_manifest = json.loads((ROOT / "workspace-manifest.json").read_text())
+        repo_manifest = json.loads((ROOT / "workspace-manifest.json").read_text(encoding="utf-8"))
         snapshots = sorted((ROOT / "docs" / "status").glob("*.snapshot.json"))
         self.assertTrue(snapshots, "no committed snapshot")
         for snap_path in snapshots:
             page_path = snap_path.with_name(snap_path.name.replace(".snapshot.json", ".md"))
             with self.subTest(page=page_path.name):
                 self.assertTrue(page_path.exists())
-                expected = status.render(json.loads(snap_path.read_text()), repo_manifest)
-                self.assertEqual(page_path.read_text(), expected, "regenerate: do not hand-edit generated pages")
+                expected = status.render(json.loads(snap_path.read_text(encoding="utf-8")), repo_manifest)
+                self.assertEqual(page_path.read_text(encoding="utf-8"), expected, "regenerate: do not hand-edit generated pages")
 
     def test_every_generated_page_has_a_snapshot(self):
         for page in sorted((ROOT / "docs" / "status").glob("*.md")):
             with self.subTest(page=page.name):
                 self.assertTrue(page.with_name(page.name[:-3] + ".snapshot.json").exists(),
                                 "a page in docs/status without a snapshot is hand-written")
-                self.assertTrue(page.read_text().startswith(identity.GENERATED_STATUS_MARKER))
+                self.assertTrue(page.read_text(encoding="utf-8").startswith(identity.GENERATED_STATUS_MARKER))
 
     def test_committed_pages_pass_the_public_surface_validator(self):
-        repo_manifest = json.loads((ROOT / "workspace-manifest.json").read_text())
+        repo_manifest = json.loads((ROOT / "workspace-manifest.json").read_text(encoding="utf-8"))
         paths = [str(p.relative_to(ROOT)) for p in (ROOT / "docs" / "status").iterdir()
                  if p.is_file() and p.suffix in (".md", ".json")]
-        identity.validate_public_surface(paths, lambda p: (ROOT / p).read_text(), {}, repo_manifest)
+        identity.validate_public_surface(paths, lambda p: (ROOT / p).read_text(encoding="utf-8"), {}, repo_manifest)
 
     def test_status_documentation_states_pages_are_generated(self):
-        text = (ROOT / "docs" / "status-generation.md").read_text()
+        text = (ROOT / "docs" / "status-generation.md").read_text(encoding="utf-8")
         self.assertIn("generated, not hand-written", text)
         self.assertIn("tools/status_snapshot.py", text)
 

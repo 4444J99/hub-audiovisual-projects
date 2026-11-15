@@ -399,7 +399,8 @@ def validate_public_surface(paths, read, baseline, manifest):
         # Only generated status pages (marker first), and the snapshot beside one, may name a repository the
         # manifest marks name-only.
         listed = path.startswith(STATUS_PAGE_PREFIX) and (
-            (path.endswith(".md") and text.startswith(GENERATED_STATUS_MARKER))
+            (path.endswith(".md") and text.startswith(GENERATED_STATUS_MARKER)
+             and path[:-3] + SNAPSHOT_SUFFIX in paths)
             or (path.endswith(SNAPSHOT_SUFFIX) and path[:-len(SNAPSHOT_SUFFIX)] + ".md" in paths
                 and read(path[:-len(SNAPSHOT_SUFFIX)] + ".md").startswith(GENERATED_STATUS_MARKER)))
         private, qualified = listed_sets if listed else strict
