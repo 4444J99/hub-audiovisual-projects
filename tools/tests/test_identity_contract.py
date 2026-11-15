@@ -84,14 +84,17 @@ class IdentityContract(unittest.TestCase):
     def test_pointer_under_any_filename_rejected_by_content(self):
         named = "Private repository 4444J99/some-private-study, commit %s, assets/a.wav." % self.SHA
         bare = "Source lives in a private repository; pinned commit %s." % self.SHA
-        for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md"):
-            for text in (named, bare):
+        plain = "Repository: time-moment-brief\nCommit: %s\nPath: assets/a.wav" % self.SHA
+        for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md",
+                     "projects/time-moment-brief/source-provenance.md", "artworks/a/notes.txt"):
+            for text in (named, bare, plain):
                 with self.assertRaisesRegex(ValueError, "private owner"):
                     self.surface({path: text})
 
     def test_baseline_document_cannot_gain_a_new_binding(self):
         old = "private repository 4444J99/old-owner at %s" % self.SHA
-        base = {"README.md": identity.surface_facts(old, identity.public_repository_names(self.manifest))}
+        base = {"README.md": identity.surface_facts(old, identity.public_repository_names(self.manifest),
+                                                   identity.private_repository_names(self.manifest))}
         self.surface({"README.md": old}, base)
         for added in ("\nprivate repository 4444J99/new-owner",
                       "\nprivate pin fedcba9876543210fedcba9876543210fedcba98"):

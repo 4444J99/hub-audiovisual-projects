@@ -258,7 +258,17 @@ PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
 
 def in_surface_scope(path):
-    return path.endswith(SURFACE_SUFFIXES) and (path.startswith(("docs/", "manifests/")) or "/" not in path)
+    """Every tracked text document except the tools and CI that carry test fixtures."""
+    return path.endswith(SURFACE_SUFFIXES) and not path.startswith(("tools/", ".github/"))
+
+
+def _repository_names(repo):
+    names = {repo["full_name"].split("/", 1)[1]}
+    names.update(repo[k] for k in ("key", "directory_slug", "local_path") if repo.get(k))
+    origin = repo.get("configured_origin")
+    if origin:
+        names.add(origin.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git"))
+    return names
 
 
 def public_repository_names(manifest):
@@ -266,19 +276,31 @@ def public_repository_names(manifest):
     names = set(PUBLIC_SELF)
     for repo in manifest["repositories"]:
         if not repo["private"]:
-            names.add(repo["full_name"].split("/", 1)[1])
-            names.update(repo[k] for k in ("key", "directory_slug", "local_path") if repo.get(k))
+            names |= _repository_names(repo)
         extra = repo.get("additional_remote")
         if extra and extra.get("private") is False:
             names.add(extra["full_name"].split("/", 1)[1])
     return names
 
 
-def surface_facts(text, public):
-    """Source bindings in a document: non-public owner references and 40-hex commit pins."""
-    refs = sorted(set(OWNER_REF.findall(text)) - public)
-    commits = sorted(set(COMMIT.findall(text))) if re.search(r"private", text, re.IGNORECASE) else []
-    return {"refs": refs, "commits": commits}
+def private_repository_names(manifest):
+    names = set()
+    for repo in manifest["repositories"]:
+        if repo["private"]:
+            names |= _repository_names(repo)
+    return names - public_repository_names(manifest)
+
+
+def surface_facts(text, public, private=frozenset()):
+    """Source bindings in a document: non-public owner references, known private
+    repository names (with or without an owner prefix) and 40-hex commit pins
+    that accompany either of them or the word private."""
+    refs = set(OWNER_REF.findall(text)) - public
+    for name in private:
+        if re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(name) + r"(?![A-Za-z0-9_-])", text):
+            refs.add(name)
+    commits = sorted(set(COMMIT.findall(text))) if refs or re.search(r"private", text, re.IGNORECASE) else []
+    return {"refs": sorted(refs), "commits": commits}
 
 
 def validate_public_surface(paths, read, baseline, manifest):
@@ -294,10 +316,11 @@ def validate_public_surface(paths, read, baseline, manifest):
     if bad:
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
     public = public_repository_names(manifest)
+    private = private_repository_names(manifest)
     for path in paths:
         if not in_surface_scope(path):
             continue
-        facts = surface_facts(read(path), public)
+        facts = surface_facts(read(path), public, private)
         reviewed = baseline.get(path, {"refs": [], "commits": []})
         new = [x for kind in ("refs", "commits") for x in facts[kind] if x not in reviewed[kind]]
         if new:

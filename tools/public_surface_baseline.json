@@ -1,10 +1,22 @@
 {
- "comment": "Reviewed source-binding facts already present in public documents before the content check. A document may keep exactly these; any other owner reference or commit pin requires a publication review.",
+ "comment": "Reviewed source-binding facts already present in public documents before the content check. A document may keep exactly these; any other owner reference, known private repository name or pinned commit requires a publication review.",
  "paths": {
+  "artworks/art-6ab7e2663fe881919dae29c328e14d72/README.md": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
   "docs/acceptance/custody-acceptance-2026-10-31.md": {
    "commits": [],
    "refs": [
     "limen"
+   ]
+  },
+  "docs/acceptance/publication-acceptance-2026-10-31.md": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
    ]
   },
   "docs/danse-private-custody.md": {
@@ -42,6 +54,44 @@
    ],
    "refs": [
     "the-thing-without-a-name-screendance",
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/browser-acceptance.json": {
+   "commits": [
+    "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180"
+   ],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/edition-receipt.json": {
+   "commits": [
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "cbce79dcbcf34ce214ba77cd2aa8d8bb9ed32fa5",
+    "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180",
+    "fbd9c9d95d29635d504cf3fa0b38799c58c2d42c"
+   ],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/2026-10-10-tmb-spatial-composition/browser-acceptance.json": {
+   "commits": [
+    "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180"
+   ],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json": {
+   "commits": [
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "cbce79dcbcf34ce214ba77cd2aa8d8bb9ed32fa5",
+    "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180",
+    "f49290f49156091cda4575b74f29cdc5d337d944"
+   ],
+   "refs": [
     "time-moment-brief"
    ]
   },
@@ -122,7 +172,8 @@
     "f6f570a0e9cdeb3118d2aea65e5521fa7a66b261"
    ],
    "refs": [
-    "the-thing-without-a-name-screendance"
+    "the-thing-without-a-name-screendance",
+    "time-moment-brief"
    ]
   },
   "docs/evidence/hosted-ci-main-2026-10-12.json": {
@@ -132,6 +183,37 @@
     "e719f28b9043ebe825b7b493f047b3c455fb5157"
    ],
    "refs": []
+  },
+  "docs/evidence/ingress-custody-reconciliation-2026-10-18.json": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/ingress-original-media-inventory-2026-10-12.json": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/ingress-original-media-inventory-2026-10-18-v2.json": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/layout-review-corrections-2026-10-12.json": {
+   "commits": [
+    "37a28eb9eea36f49bf5eda5bc253aa47c4c80dc8",
+    "9f407ca7ac8303c29f20c7e3c332919fb540731c",
+    "ccb26e58f85e0372dae31f8dee2d4cb665b4919a",
+    "d5b420dcd28f1d91e272b87ff9551a48a41c1042",
+    "da10bd9224f3ea3bffad6460156efc0147f0b241",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "time-moment-brief"
+   ]
   },
   "docs/evidence/pr-reconciliation-2026-10-25.json": {
    "commits": [
@@ -223,6 +305,7 @@
     "fb8cae970507003e297d3bf8e74217273fac8454"
    ],
    "refs": [
+    "danse-source",
     "limen"
    ]
   },
@@ -235,6 +318,28 @@
    ],
    "refs": [
     "the-thing-without-a-name-screendance"
+   ]
+  },
+  "docs/evidence/unversioned-ownership-2026-10-12.json": {
+   "commits": [
+    "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
+    "9f407ca7ac8303c29f20c7e3c332919fb540731c",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
+  "docs/evidence/workspace-layout-2.0.0.json": {
+   "commits": [
+    "37a28eb9eea36f49bf5eda5bc253aa47c4c80dc8",
+    "9f407ca7ac8303c29f20c7e3c332919fb540731c",
+    "d5b420dcd28f1d91e272b87ff9551a48a41c1042",
+    "da10bd9224f3ea3bffad6460156efc0147f0b241",
+    "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
+   ],
+   "refs": [
+    "time-moment-brief"
    ]
   },
   "docs/github-actions-billing-follow-up-2026-10-12.md": {
@@ -257,6 +362,23 @@
    ],
    "refs": []
   },
+  "docs/project-catalog.md": {
+   "commits": [],
+   "refs": [
+    "deterministic-performance-engine",
+    "synchronized-generation-playback",
+    "time-moment-brief"
+   ]
+  },
+  "docs/public-catalog.json": {
+   "commits": [],
+   "refs": [
+    "danse-source",
+    "deterministic-performance-engine",
+    "synchronized-generation-playback",
+    "time-moment-brief"
+   ]
+  },
   "docs/reconciliation/ace-portfolio-reconciliation-2026-10-31.md": {
    "commits": [
     "121a07104f93603af4bb5026511c8e50eb8938cc",
@@ -275,6 +397,8 @@
     "f6f27c10a4bf617d895b0f0387eb3013aa39913b"
    ],
    "refs": [
+    "danse-source",
+    "synchronized-generation-playback",
     "the-thing-without-a-name-screendance",
     "time-moment-brief"
    ]
@@ -283,7 +407,9 @@
    "commits": [
     "1dab672892563537daf6c3a1ed1e66f90d06a60e"
    ],
-   "refs": []
+   "refs": [
+    "time-moment-brief"
+   ]
   },
   "docs/source-remote-publication-2026-10-12.md": {
    "commits": [
@@ -296,13 +422,21 @@
     "the-thing-without-a-name-screendance"
    ]
   },
+  "docs/sources/ace-project-membership-2026-10-10.json": {
+   "commits": [],
+   "refs": [
+    "time-moment-brief"
+   ]
+  },
   "docs/tmb-spatial-integration-report.md": {
    "commits": [
     "44d815c978fc9b57526ff9b18165cd5b8d777b5c",
     "cbce79dcbcf34ce214ba77cd2aa8d8bb9ed32fa5",
     "e5900ef98fa7a9644af1708e0e6c6cbbcde5b180"
    ],
-   "refs": []
+   "refs": [
+    "time-moment-brief"
+   ]
   },
   "docs/unversioned-material-ownership-2026-10-12.md": {
    "commits": [
@@ -322,7 +456,9 @@
     "7fa91812369b5b60f09b733565c9a2507ea177ab",
     "df076d1316aae780ab2148351813840f1fbbfbe9"
    ],
-   "refs": []
+   "refs": [
+    "time-moment-brief"
+   ]
   },
   "docs/workstream-continuation.md": {
    "commits": [
@@ -342,9 +478,45 @@
     "time-moment-brief"
    ]
   },
+  "projects/time-moment-brief/README.md": {
+   "commits": [],
+   "refs": [
+    "synchronized-generation-playback",
+    "time-moment-brief"
+   ]
+  },
+  "repositories/danse-source/README.md": {
+   "commits": [],
+   "refs": [
+    "danse-source",
+    "deterministic-performance-engine"
+   ]
+  },
+  "repositories/deterministic-performance-engine/README.md": {
+   "commits": [],
+   "refs": [
+    "deterministic-performance-engine"
+   ]
+  },
+  "repositories/synchronized-generation-playback/README.md": {
+   "commits": [],
+   "refs": [
+    "synchronized-generation-playback"
+   ]
+  },
+  "repositories/time-moment-brief/README.md": {
+   "commits": [],
+   "refs": [
+    "synchronized-generation-playback",
+    "time-moment-brief"
+   ]
+  },
   "workspace-manifest.json": {
    "commits": [],
    "refs": [
+    "danse-source",
+    "deterministic-performance-engine",
+    "synchronized-generation-playback",
     "the-thing-without-a-name-screendance",
     "time-moment-brief"
    ]
