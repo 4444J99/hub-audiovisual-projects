@@ -4,6 +4,7 @@ from copy import deepcopy
 import importlib.util
 import json
 import os
+import tempfile
 import subprocess
 from pathlib import Path
 import unittest
@@ -116,6 +117,20 @@ class IdentityContract(unittest.TestCase):
     def test_public_commit_url_is_not_a_private_pin(self):
         text = "private custody note; review at https://github.com/4444J99/hub-audiovisual-projects/commit/%s" % self.SHA
         self.surface({"docs/new-evidence.md": text})
+
+    def test_pointer_cannot_hide_behind_case_or_encoding(self):
+        text = "Repository: https://github.com/4444j99/Time-Moment-Brief\nCommit: %s\nPath: media/take.wav" % self.SHA
+        with self.assertRaisesRegex(ValueError, "private owner"):
+            self.surface({"docs/source-provenance.md": text})
+        plain = "Repository: time-moment-brief\nCommit: %s\nPath: media/take.wav" % self.SHA
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, data in (("bom16.html", plain.encode("utf-16")), ("le16.html", plain.encode("utf-16-le")),
+                               ("be16.html", plain.encode("utf-16-be")), ("bom8.md", b"\xef\xbb\xbf" + plain.encode())):
+                path = Path(tmp) / name
+                path.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, "private owner"):
+                    identity.validate_public_surface(["docs/" + name], lambda _p, f=path: identity.read_text_or_none(f),
+                                                     {}, self.manifest)
 
     def test_public_names_aliases_and_public_remotes_allowed(self):
         for ref in ("4444J99/tool-audiovisual-postproduction/pull/1", "4444J99/hub-audiovisual-projects",

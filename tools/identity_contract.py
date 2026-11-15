@@ -251,8 +251,8 @@ def validate_publication(manifest):
 
 
 PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
-OWNER_REF = re.compile(r"(?:github\.com[/:])?\b(?:4444J99|organvm)/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
-PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444J99/([A-Za-z0-9._-]+)/commit/[0-9a-f]{7,40}")
+OWNER_REF = re.compile(r"(?:github\.com[/:])?\b(?:4444j99|organvm)/([a-z0-9._-]+?)(?:\.git)?(?![a-z0-9_-])")
+PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444j99/([a-z0-9._-]+)/commit/[0-9a-f]{7,40}")
 COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
 PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
@@ -314,6 +314,11 @@ def surface_facts(text, public, private=frozenset(), qualified=frozenset()):
     """Source bindings in a document: non-public owner references, known private
     repository names (with or without an owner prefix) and 40-hex commit pins
     that accompany either of them or the word private."""
+    # GitHub identities are case-insensitive: compare everything lowercased.
+    text = text.lower()
+    public = {n.lower() for n in public}
+    private = {n.lower() for n in private}
+    qualified = {n.lower() for n in qualified}
     refs = set(OWNER_REF.findall(text)) - public
     for identity_ in qualified:
         if re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(identity_) + r"(?![A-Za-z0-9_-])", text):
@@ -328,9 +333,21 @@ def surface_facts(text, public, private=frozenset(), qualified=frozenset()):
 
 
 def read_text_or_none(path):
-    """Decode a tracked file for inspection; None for binary files (containing NUL)."""
+    """Decode a tracked file for inspection under every plausible text encoding.
+
+    BOM-marked UTF-8/UTF-16/UTF-32 text is decoded; other NUL-bearing data is read as
+    every plausible wide encoding at once so a pointer cannot hide behind its encoding.
+    """
     data = path.read_bytes()
-    return None if b"\0" in data else data.decode("utf-8", "replace")
+    for bom, codec in ((b"\xff\xfe\x00\x00", "utf-32"), (b"\x00\x00\xfe\xff", "utf-32"),
+                       (b"\xef\xbb\xbf", "utf-8-sig"), (b"\xff\xfe", "utf-16"), (b"\xfe\xff", "utf-16")):
+        if data.startswith(bom):
+            return data.decode(codec, "replace")
+    if b"\0" not in data:
+        return data.decode("utf-8", "replace")
+    views = [data.decode(codec, "replace") for codec in ("utf-16-le", "utf-16-be")]
+    views.append(data.replace(b"\0", b"").decode("utf-8", "replace"))
+    return "\n".join(views)
 
 
 def content_digest(text):
@@ -358,8 +375,6 @@ def validate_public_surface(paths, read, baseline, manifest):
         if not in_surface_scope(path):
             continue
         text = read(path)
-        if text is None:  # binary content has no readable source binding
-            continue
         if path in baseline:
             if content_digest(text) != baseline[path]:
                 raise ValueError("Private source pointers belong in their private owner: reviewed document %s "
