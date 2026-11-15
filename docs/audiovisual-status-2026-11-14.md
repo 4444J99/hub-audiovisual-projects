@@ -40,10 +40,6 @@ The hub's `main` had a failed hosted run on 2026-11-06 and a green one on 2026-1
 3. **TouchDesigner network has no real-application proof.** Generation and simulation are tested; the repository says it was not built in TouchDesigner.
 4. **Status was spread across four READMEs.** This page lines up heads, gates and next steps; refresh it when a head moves.
 
-## Owner goals file, audiovisual domain
-
-The private goals file (revision r6, 2026-11-14) names this domain "Audiovisual composition and post-production": an audiovisual composition engine with a live-coding workbench ported into TouchDesigner, Blender environments from set specifications, and a post-production system (room tone, actor coverage, layered compositing, colour). It records the state as hub #29 and postproduction #133 to #135 merged, and names one next deliverable, a Blender combustion-simulation bake for the first set specification. That state is stale in two ways. Postproduction #136 to #158 have merged since (the table above), and the named next deliverable is already complete in the owning private work repository, so it is not an open gap. The set-spec builder (#142, #156) and colour, coverage and pipeline tooling (#140, #145, #147) it points at exist on `main`. What remains open in this domain is the section above: no proof in a real TouchDesigner, the GHERE-AI program, and the listening and device acceptance each repository keeps open. A corrected goals entry is proposed in the pull request that added this page; the goals file itself is not edited here.
-
 ## Boundaries
 
 This page asserts no artistic, device, delivery or custody acceptance for any work and describes no restricted repository. Each repository's own documents remain the owner of its claims.
