@@ -315,6 +315,19 @@ def private_repository_names(manifest, allow_listed=False):
     return names - public_repository_names(manifest)
 
 
+def listed_name_paths(text, manifest):
+    """Uses of a name-only repository's bare name as a path or owner-qualified reference (``name/src/x.py``,
+    ``owner/name``). The exemption covers the bare name only, never a source binding built on it."""
+    found = []
+    lowered = text.lower()
+    for repo in manifest["repositories"]:
+        if name_listed(repo):
+            name = re.escape(repo["full_name"].split("/", 1)[1].lower())
+            if re.search(r"(?<![a-z0-9_.-])%s\s*[/\\]|[/\\]\s*%s(?![a-z0-9_-])" % (name, name), lowered):
+                found.append(repo["full_name"].split("/", 1)[1])
+    return found
+
+
 def private_qualified_origins(manifest, allow_listed=False):
     """Owner-qualified private identities, which stay private even when a public remote shares the basename."""
     found = set()
@@ -413,7 +426,7 @@ def validate_public_surface(paths, read, baseline, manifest):
                                  "changed; re-review its source bindings and update the baseline digest" % path)
             continue
         facts = surface_facts(text, public, private, qualified)
-        found = facts["refs"] + facts["commits"]
+        found = facts["refs"] + facts["commits"] + (listed_name_paths(text, manifest) if listed else [])
         if found:
             raise ValueError("Private source pointers belong in their private owner: %s adds source binding %s"
                              % (path, found[0]))

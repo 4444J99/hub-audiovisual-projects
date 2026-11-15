@@ -178,7 +178,7 @@ def collect_repo(gh, repo, since, restricted=()):
     if meta.get("private") is not False or meta.get("visibility", "public") != "public":
         raise StatusError("%s is marked public in the manifest but GitHub does not report it public" % repo)
     branch = meta["default_branch"]
-    head = gh("api", "repos/%s/commits/%s" % (repo, branch))
+    head = gh("api", "repos/%s/commits/%s" % (repo, urllib.parse.quote(branch, safe="")))
     head_sha = head["sha"]
     head_pr = None
     head_pr_merged = None
@@ -233,7 +233,7 @@ def collect_repo(gh, repo, since, restricted=()):
                    "jobs": len(jobs), "executed_steps": executed,
                    "verdict": verdict(run["status"], run["conclusion"], executed)})
 
-    if gh("api", "repos/%s/commits/%s" % (repo, branch))["sha"] != head_sha:
+    if gh("api", "repos/%s/commits/%s" % (repo, urllib.parse.quote(branch, safe="")))["sha"] != head_sha:
         raise StatusError("%s: %s moved while its state was being read; run again" % (repo, branch))
     issues_updated = gh("issue", "list", "-R", repo, "--state", "all", "--search", "updated:>=%s" % since,
                         "--limit", str(LIST_LIMIT), "--json", "number,title,state,updatedAt")
@@ -374,6 +374,11 @@ def validate_snapshot(snap):
             steps = entry.get("executed_steps")
             if steps is not None and (type(steps) is not int or steps < 0):
                 raise StatusError("%s: red-at-merge step count is not a count" % name)
+            allowed = {"red": RED_CONCLUSIONS | {"error"}, "cannot-start": RED_CONCLUSIONS, "no-steps": {"success"},
+                       "cancelled": {"cancelled"}}.get(entry["state"])
+            if allowed is not None and entry.get("conclusion") not in allowed:
+                raise StatusError("%s: red-at-merge state %r contradicts its conclusion %r" % (
+                    name, entry["state"], entry.get("conclusion")))
             if entry["state"] in ("red", "cannot-start", "no-steps") and steps is not None and (entry["state"] != "red") != (steps == 0):
                 raise StatusError("%s: red-at-merge state %r contradicts its %d executed steps" % (name, entry["state"], steps))
             if entry.get("state") not in MERGE_STATES:
@@ -555,6 +560,9 @@ def _restricted_substrings(manifest):
 
 
 def _gate_surface(page, manifest):
+    bound = identity_contract.listed_name_paths(page.replace("\\", ""), manifest)
+    if bound:
+        raise StatusError("generated page builds a path or owner-qualified reference on a name-only repository: %s" % bound[0])
     lowered = page.replace(PLACEHOLDER, "").lower().replace("\\", "")
     for name in sorted(_restricted_substrings(manifest)):
         if name in lowered:

@@ -213,6 +213,34 @@ class NameOnlyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             identity.validate_public_surface(["docs/status/a.json"], lambda p: marked, {}, m)
 
+    def test_name_only_exemption_does_not_cover_paths_or_owner_qualified_references(self):
+        m = manifest()
+        both = ["docs/status/a.md", "docs/status/a.snapshot.json"]
+        for text in ("see named-thing/src/internal.py", "see 4444J" "99/named-thing", "see x/named-thing here",
+                     "path named-thing\\src"):
+            with self.subTest(text=text):
+                files = {both[0]: identity.GENERATED_STATUS_MARKER + " -->\n" + text, both[1]: "{}"}
+                with self.assertRaises(ValueError):
+                    identity.validate_public_surface(both, files.get, {}, m)
+        files = {both[0]: identity.GENERATED_STATUS_MARKER + " -->\nlisted `named-thing` only", both[1]: "{}"}
+        identity.validate_public_surface(both, files.get, {}, m)
+
+    def test_renderer_refuses_a_path_built_on_a_name_only_repository(self):
+        snap = snapshot()
+        snap["repositories"][0]["merged_prs"][0]["title"] = "fix named-thing/src/internal.py"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_red_at_merge_state_must_match_its_conclusion(self):
+        snap = snapshot()
+        snap["repositories"][0]["red_at_merge"][1].update(state="no-steps")  # a failure cannot be a hollow pass
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+        snap = snapshot()
+        snap["repositories"][0]["red_at_merge"][0].update(conclusion="success")  # a success cannot be red
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
     def test_snapshot_beside_a_generated_page_is_exempt_but_a_lone_one_is_not(self):
         m = manifest()
         page = identity.GENERATED_STATUS_MARKER + " -->\npage"
