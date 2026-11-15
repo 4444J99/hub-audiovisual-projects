@@ -1,0 +1,1787 @@
+{
+  "captured_at": "2026-11-15T17:38:53Z",
+  "date": "2026-11-15",
+  "name_only": [],
+  "omitted_count": 2,
+  "repositories": [
+    {
+      "ci": [
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T15:47:28Z",
+          "event": "push",
+          "executed_steps": 8,
+          "head_sha": "7e5a45aa9259",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43731832113,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Verify composition system",
+          "workflow_id": 380871665
+        }
+      ],
+      "default_branch": "main",
+      "full_name": "4444J99/hub-audiovisual-projects",
+      "issues_open_count": 2,
+      "issues_updated": [
+        {
+          "number": 35,
+          "state": "closed",
+          "title": "Make browser check silence permanent: mute-at-source launch helper",
+          "updated_at": "2026-11-15T12:52:01Z"
+        },
+        {
+          "number": 37,
+          "state": "closed",
+          "title": "Silent init script: nested shadow roots and the MediaElementAudioSourceNode constructor",
+          "updated_at": "2026-11-15T14:15:19Z"
+        },
+        {
+          "number": 40,
+          "state": "closed",
+          "title": "Silent launch lint reads string literal text as code",
+          "updated_at": "2026-11-15T15:03:41Z"
+        },
+        {
+          "number": 42,
+          "state": "open",
+          "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
+          "updated_at": "2026-11-15T15:00:38Z"
+        }
+      ],
+      "listing": "full",
+      "main": {
+        "committed_at": "2026-11-15T15:47:25Z",
+        "pr": 43,
+        "resolved": true,
+        "sha": "7e5a45aa9259",
+        "title": "docs: audiovisual status 2026-11-15 corrections (dated sibling) (#43)"
+      },
+      "merged_other_base": 0,
+      "merged_prs": [
+        {
+          "head_sha": "633d875f059c",
+          "merge_sha": "a62aed8b6992",
+          "merged_at": "2026-11-13T19:34:10Z",
+          "number": 29,
+          "resolved": true,
+          "title": "Home unhomed God-here TouchDesigner work: offline toe verification, acceptance docs, release packet"
+        },
+        {
+          "head_sha": "a2d1fed39101",
+          "merge_sha": "3d2859d8037d",
+          "merged_at": "2026-11-15T04:50:12Z",
+          "number": 30,
+          "resolved": true,
+          "title": "docs: evidence-bound audiovisual status map (2026-11-14)"
+        },
+        {
+          "head_sha": "31829e34d245",
+          "merge_sha": "12496671c838",
+          "merged_at": "2026-11-15T05:14:49Z",
+          "number": 31,
+          "resolved": true,
+          "title": "Record that TouchDesigner work has not run in-app; add first in-app checklist"
+        },
+        {
+          "head_sha": "a07bbf78a453",
+          "merge_sha": "15673b0eaa16",
+          "merged_at": "2026-11-15T07:37:33Z",
+          "number": 33,
+          "resolved": true,
+          "title": "Reject private-source pointer files in the public repo (follow-up to PR 32)"
+        },
+        {
+          "head_sha": "be4b13496f63",
+          "merge_sha": "b16a079b2deb",
+          "merged_at": "2026-11-15T07:42:45Z",
+          "number": 34,
+          "resolved": true,
+          "title": "docs: status page records the diagnosed signal-15 failure and the hole-loop rendition export"
+        },
+        {
+          "head_sha": "02c0476fe877",
+          "merge_sha": "c8faeeb3cf90",
+          "merged_at": "2026-11-15T12:52:00Z",
+          "number": 36,
+          "resolved": true,
+          "title": "Make browser check silence permanent: silent launch helper, init script, lint"
+        },
+        {
+          "head_sha": "e27d7b280646",
+          "merge_sha": "59c3cc5639eb",
+          "merged_at": "2026-11-15T14:15:17Z",
+          "number": 38,
+          "resolved": true,
+          "title": "Silent init script: nested shadow roots and MediaElementAudioSourceNode constructor"
+        },
+        {
+          "head_sha": "503df344fabe",
+          "merge_sha": "d6ac9c71d34b",
+          "merged_at": "2026-11-15T14:44:39Z",
+          "number": 39,
+          "resolved": true,
+          "title": "docs: audiovisual status refresh 2026-11-15 (dated sibling)"
+        },
+        {
+          "head_sha": "bc437b54c72b",
+          "merge_sha": "7e5a45aa9259",
+          "merged_at": "2026-11-15T15:47:25Z",
+          "number": 43,
+          "resolved": true,
+          "title": "docs: audiovisual status 2026-11-15 corrections (dated sibling)"
+        }
+      ],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "a676238eba27",
+          "number": 44,
+          "resolved": true,
+          "title": "Generate status pages from live GitHub state (status_snapshot.py); regenerate 2026-11-15",
+          "updated_at": "2026-11-15T17:17:23Z"
+        }
+      ],
+      "red_at_merge": [
+        {
+          "check": "Sourcery review",
+          "conclusion": "failure",
+          "executed_steps": null,
+          "head_sha": "633d875f059c",
+          "merged_at": "2026-11-13T19:34:10Z",
+          "pr": 29,
+          "run_id": null,
+          "state": "red"
+        }
+      ],
+      "visibility_live": "public"
+    },
+    {
+      "ci": [
+        {
+          "conclusion": "success",
+          "created_at": "2026-10-26T04:59:40Z",
+          "event": "dynamic",
+          "executed_steps": 2,
+          "head_sha": "03dffc72aedc",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 40271881902,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Graph Update: pip in /. #1653126371",
+          "workflow_id": 378076088
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-10-13T18:58:31Z",
+          "event": "push",
+          "executed_steps": 11,
+          "head_sha": "3746e3e480dd",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 38451100718,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Recovery integrity",
+          "workflow_id": 381538512
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T16:13:00Z",
+          "event": "push",
+          "executed_steps": 9,
+          "head_sha": "5f0f2cb8e3c6",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43734211895,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Verify production system",
+          "workflow_id": 381538514
+        }
+      ],
+      "default_branch": "main",
+      "full_name": "4444J99/tool-audiovisual-postproduction",
+      "issues_open_count": 15,
+      "issues_updated": [
+        {
+          "number": 146,
+          "state": "closed",
+          "title": "TouchDesigner network: mirror workbench-side rule changes (hand edits, recorded events)",
+          "updated_at": "2026-11-15T02:52:35Z"
+        },
+        {
+          "number": 151,
+          "state": "open",
+          "title": "TouchDesigner effects: stateful and sample-rate operations (Freeze envelope and seek, Damage hold across time slices)",
+          "updated_at": "2026-11-15T02:55:00Z"
+        },
+        {
+          "number": 152,
+          "state": "closed",
+          "title": "set_spec v1 vocabulary gap: horizontal-axis cylinders and other primitives cannot be expressed",
+          "updated_at": "2026-11-15T03:39:23Z"
+        },
+        {
+          "number": 153,
+          "state": "closed",
+          "title": "tests/studies/test_reference_review.py: 4 of 6 tests fail on a fresh checkout without node_modules, with no usable message",
+          "updated_at": "2026-11-15T03:34:34Z"
+        },
+        {
+          "number": 171,
+          "state": "closed",
+          "title": "Make browser check silence permanent: mute-at-source launch helper",
+          "updated_at": "2026-11-15T12:57:36Z"
+        },
+        {
+          "number": 173,
+          "state": "closed",
+          "title": "Silent init script: nested shadow roots and the MediaElementAudioSourceNode constructor",
+          "updated_at": "2026-11-15T14:15:25Z"
+        },
+        {
+          "number": 177,
+          "state": "closed",
+          "title": "QC: a dialogue span with no caption passes (coverage hole in delivery QC)",
+          "updated_at": "2026-11-15T15:18:43Z"
+        },
+        {
+          "number": 178,
+          "state": "closed",
+          "title": "QC: burned-in text is not compared with the caption text (standalone delivery_qc passes wrong burned text)",
+          "updated_at": "2026-11-15T15:31:26Z"
+        },
+        {
+          "number": 179,
+          "state": "closed",
+          "title": "QC: NaN in the delivery report defeats loudness.report_agreement; non-integer total_frames accepted by int() coercion",
+          "updated_at": "2026-11-15T15:08:03Z"
+        },
+        {
+          "number": 180,
+          "state": "closed",
+          "title": "QC: report does not say which checks cannot fail independently; shot timecode round trip is an identity; DELIVERY-QC.md counts wrong",
+          "updated_at": "2026-11-15T15:31:35Z"
+        },
+        {
+          "number": 184,
+          "state": "closed",
+          "title": "Silent launch lint reads string literal text as code",
+          "updated_at": "2026-11-15T15:03:37Z"
+        },
+        {
+          "number": 186,
+          "state": "open",
+          "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
+          "updated_at": "2026-11-15T15:00:37Z"
+        },
+        {
+          "number": 187,
+          "state": "closed",
+          "title": "QC: WebVTT text is never compared with the SRT text in the standalone QC",
+          "updated_at": "2026-11-15T15:31:37Z"
+        },
+        {
+          "number": 189,
+          "state": "open",
+          "title": "demo verify: the mp4's sound is only checked for loudness; noise at the delivered loudness or a tone in the padding passes (P2)",
+          "updated_at": "2026-11-15T16:38:11Z"
+        },
+        {
+          "number": 190,
+          "state": "open",
+          "title": "demo verify: chroma planes are never checked although docs/DEMO.md says they are flat grey (P2)",
+          "updated_at": "2026-11-15T16:38:12Z"
+        },
+        {
+          "number": 191,
+          "state": "open",
+          "title": "demo run: replacing a directory is not atomic; a partial failure deletes the marker and locks the directory; --output . fails after deleting everything (P3)",
+          "updated_at": "2026-11-15T16:38:13Z"
+        },
+        {
+          "number": 192,
+          "state": "open",
+          "title": "demo: several failures exit 1 with a Python traceback instead of exit 2 and JSON (P3)",
+          "updated_at": "2026-11-15T16:38:14Z"
+        },
+        {
+          "number": 193,
+          "state": "open",
+          "title": "demo verify: demo-qc.json and the deterministic/stages/encoder/schema fields of demo-hashes.json are never compared (P3)",
+          "updated_at": "2026-11-15T16:38:15Z"
+        }
+      ],
+      "listing": "full",
+      "main": {
+        "committed_at": "2026-11-15T16:12:57Z",
+        "pr": 188,
+        "resolved": true,
+        "sha": "5f0f2cb8e3c6",
+        "title": "fix(chain): host-independent chain hash (fill report sealed float intermediates) (#188)"
+      },
+      "merged_other_base": 0,
+      "merged_prs": [
+        {
+          "head_sha": "eb8ca57fbbcc",
+          "merge_sha": "fa52198cd02d",
+          "merged_at": "2026-11-13T21:30:48Z",
+          "number": 133,
+          "resolved": true,
+          "title": "feat(fx): touch and MIDI control surface for the FX rack"
+        },
+        {
+          "head_sha": "d559356b0e07",
+          "merge_sha": "4ed66018c3f7",
+          "merged_at": "2026-11-13T23:33:42Z",
+          "number": 134,
+          "resolved": true,
+          "title": "test: remove hard-coded machine paths from study and composition tests"
+        },
+        {
+          "head_sha": "c28b19a27f64",
+          "merge_sha": "80dd1d07763d",
+          "merged_at": "2026-11-13T23:46:20Z",
+          "number": 135,
+          "resolved": true,
+          "title": "feat(fx): TouchDesigner OSC bridge for the FX control surface"
+        },
+        {
+          "head_sha": "ea621a7a2d29",
+          "merge_sha": "681eb4a6e574",
+          "merged_at": "2026-11-14T00:13:41Z",
+          "number": 136,
+          "resolved": true,
+          "title": "feat(studies): reverse-angle planning and observed-pixel ledger"
+        },
+        {
+          "head_sha": "5c7ac507176f",
+          "merge_sha": "f9768300540c",
+          "merged_at": "2026-11-14T00:23:05Z",
+          "number": 137,
+          "resolved": true,
+          "title": "feat(fx): extract layout geometry and measure horizontal vs vertical placement"
+        },
+        {
+          "head_sha": "7130e88bb936",
+          "merge_sha": "1a69aa410d73",
+          "merged_at": "2026-11-14T00:27:18Z",
+          "number": 138,
+          "resolved": true,
+          "title": "feat(fx): synthetic asset pack and TouchDesigner simulator for end-to-end bridge checks"
+        },
+        {
+          "head_sha": "cdbda480333e",
+          "merge_sha": "32a3de181e60",
+          "merged_at": "2026-11-14T12:20:59Z",
+          "number": 139,
+          "resolved": true,
+          "title": "feat(studies): shot plan validator, edit ledger and animatic"
+        },
+        {
+          "head_sha": "26814620fe20",
+          "merge_sha": "43512e5d6de1",
+          "merged_at": "2026-11-14T15:04:13Z",
+          "number": 140,
+          "resolved": true,
+          "title": "feat(grade): colour grade chains and layered compositing plan validator"
+        },
+        {
+          "head_sha": "63d65ab98e9b",
+          "merge_sha": "5e53f6a357f8",
+          "merged_at": "2026-11-14T15:11:58Z",
+          "number": 141,
+          "resolved": true,
+          "title": "feat(td): spec-driven TouchDesigner network generator for the FX rack"
+        },
+        {
+          "head_sha": "18828e8df7bf",
+          "merge_sha": "57a75cdfb46a",
+          "merged_at": "2026-11-14T16:02:24Z",
+          "number": 144,
+          "resolved": true,
+          "title": "feat(td): resolved parameters, sidechain envelope and effect chains in the generated TouchDesigner network"
+        },
+        {
+          "head_sha": "bcea61bf03e3",
+          "merge_sha": "193967f9a97b",
+          "merged_at": "2026-11-14T16:05:39Z",
+          "number": 145,
+          "resolved": true,
+          "title": "feat(studies): actor-coverage matrix validator feeding the shot plan"
+        },
+        {
+          "head_sha": "5bcae36112c2",
+          "merge_sha": "67a98fb5a652",
+          "merged_at": "2026-11-14T16:18:12Z",
+          "number": 143,
+          "resolved": true,
+          "title": "feat(audio): room-tone extraction and loop-matched gap fill"
+        },
+        {
+          "head_sha": "89f112a82056",
+          "merge_sha": "82616a57faa5",
+          "merged_at": "2026-11-15T02:09:30Z",
+          "number": 142,
+          "resolved": true,
+          "title": "feat(blender): set spec validator and headless spec-to-scene builder"
+        },
+        {
+          "head_sha": "8c9d06c5bf0c",
+          "merge_sha": "8a3e64fcb0be",
+          "merged_at": "2026-11-15T02:35:46Z",
+          "number": 149,
+          "resolved": true,
+          "title": "fix(fx-bridge): refuse reserved WebSocket opcodes and keep close frames within 125 bytes"
+        },
+        {
+          "head_sha": "48d01748cb7b",
+          "merge_sha": "436bafe95850",
+          "merged_at": "2026-11-15T02:52:34Z",
+          "number": 148,
+          "resolved": true,
+          "title": "feat(td): mirror workbench rule changes (automation, events, macros) into the TouchDesigner network"
+        },
+        {
+          "head_sha": "07efcee0067f",
+          "merge_sha": "9c31689dbf77",
+          "merged_at": "2026-11-15T02:54:33Z",
+          "number": 147,
+          "resolved": true,
+          "title": "feat(pipeline): hash-chained synthetic chain from set spec to colour plan"
+        },
+        {
+          "head_sha": "27204901e8b2",
+          "merge_sha": "36ff57ca6217",
+          "merged_at": "2026-11-15T03:18:17Z",
+          "number": 150,
+          "resolved": true,
+          "title": "feat(td): Freeze / Hold, Feedback recurrence cap/tail/reset, Signal Damage sample-rate hold"
+        },
+        {
+          "head_sha": "c0d8b17f674d",
+          "merge_sha": "deeea0a2a843",
+          "merged_at": "2026-11-15T03:29:15Z",
+          "number": 155,
+          "resolved": true,
+          "title": "perf(td): EpochLatch checkpoints so a backward seek replays at most 64 frames"
+        },
+        {
+          "head_sha": "60fac08a34ca",
+          "merge_sha": "e627dd830626",
+          "merged_at": "2026-11-15T03:34:33Z",
+          "number": 154,
+          "resolved": true,
+          "title": "test(reference-review): fail once with the remedy when node_modules is missing"
+        },
+        {
+          "head_sha": "225b9408aa5e",
+          "merge_sha": "987f759b18f5",
+          "merged_at": "2026-11-15T03:39:22Z",
+          "number": 156,
+          "resolved": true,
+          "title": "feat(blender): set spec v1.1 with axis cylinders, cone, sphere, torus and stairs"
+        },
+        {
+          "head_sha": "3dfd48efec84",
+          "merge_sha": "bbd1f680c2d8",
+          "merged_at": "2026-11-15T03:59:31Z",
+          "number": 157,
+          "resolved": true,
+          "title": "feat(td): declared latency (look-ahead buffers), Reverse and Stutter picture, workbench compensation"
+        },
+        {
+          "head_sha": "78ff59d6d4ad",
+          "merge_sha": "fa59f2dd9aa9",
+          "merged_at": "2026-11-15T04:06:23Z",
+          "number": 158,
+          "resolved": true,
+          "title": "feat(td): Routing picture chain checked against the workbench's own draw calls"
+        },
+        {
+          "head_sha": "9b0c935e60d3",
+          "merge_sha": "bb64da2a075a",
+          "merged_at": "2026-11-15T04:17:48Z",
+          "number": 159,
+          "resolved": true,
+          "title": "docs: branch and push rules and the force-with-lease breach record"
+        },
+        {
+          "head_sha": "ae6dbac59eb4",
+          "merge_sha": "13b07e3ff3fd",
+          "merged_at": "2026-11-15T04:27:48Z",
+          "number": 160,
+          "resolved": true,
+          "title": "feat(td): Exchange picture chain checked against the workbench's own draw calls"
+        },
+        {
+          "head_sha": "4134fd7b15f4",
+          "merge_sha": "89d5370f08e5",
+          "merged_at": "2026-11-15T04:34:39Z",
+          "number": 161,
+          "resolved": true,
+          "title": "feat(td): Queue / Overflow picture chain checked against the workbench's transform stack"
+        },
+        {
+          "head_sha": "8ce8b6293e8e",
+          "merge_sha": "a787acf93039",
+          "merged_at": "2026-11-15T04:47:04Z",
+          "number": 165,
+          "resolved": true,
+          "title": "feat(td): Routing voice checked against the workbench's audio engine"
+        },
+        {
+          "head_sha": "4e797ad50c39",
+          "merge_sha": "f2a4047b069f",
+          "merged_at": "2026-11-15T04:53:21Z",
+          "number": 163,
+          "resolved": true,
+          "title": "feat(td): Typography picture chain checked against the workbench's own words"
+        },
+        {
+          "head_sha": "967e4a41f637",
+          "merge_sha": "8339be69b06f",
+          "merged_at": "2026-11-15T05:02:36Z",
+          "number": 162,
+          "resolved": true,
+          "title": "feat(audio): BS.1770-4 / EBU R128 loudness, true peak, delivery check and gain planner"
+        },
+        {
+          "head_sha": "687449a35387",
+          "merge_sha": "57cbc88b7bf5",
+          "merged_at": "2026-11-15T05:04:24Z",
+          "number": 164,
+          "resolved": true,
+          "title": "feat(td): Granular picture chain checked against the workbench's transform stack"
+        },
+        {
+          "head_sha": "153583438cf9",
+          "merge_sha": "c80d4955a6ae",
+          "merged_at": "2026-11-15T05:21:18Z",
+          "number": 168,
+          "resolved": true,
+          "title": "feat(pipeline): loudness delivery stage between room-tone fill and the final ledger"
+        },
+        {
+          "head_sha": "968a45dc2f25",
+          "merge_sha": "1e72ce5d5949",
+          "merged_at": "2026-11-15T05:27:19Z",
+          "number": 167,
+          "resolved": true,
+          "title": "fix: close review debt from #133, #135, #136, #138, #139, #142"
+        },
+        {
+          "head_sha": "0d3f2bacaec0",
+          "merge_sha": "4314abbe8d8a",
+          "merged_at": "2026-11-15T05:39:04Z",
+          "number": 169,
+          "resolved": true,
+          "title": "feat(captions): SRT and WebVTT timing from word cues with reading-speed spec"
+        },
+        {
+          "head_sha": "f273f9e1ac20",
+          "merge_sha": "88402d25ec1c",
+          "merged_at": "2026-11-15T05:40:21Z",
+          "number": 166,
+          "resolved": true,
+          "title": "Record that TouchDesigner work has not run in-app; add first in-app checklist"
+        },
+        {
+          "head_sha": "479ec3dd5bfa",
+          "merge_sha": "2750b326fba9",
+          "merged_at": "2026-11-15T08:24:11Z",
+          "number": 170,
+          "resolved": true,
+          "title": "feat(captions): burn-in frames hash-chained into the pipeline manifest, re-derived on verify"
+        },
+        {
+          "head_sha": "6da3a9537393",
+          "merge_sha": "2cb51c6ad0b3",
+          "merged_at": "2026-11-15T12:57:35Z",
+          "number": 172,
+          "resolved": true,
+          "title": "Make browser check silence permanent: silent launch helpers, init script, lint"
+        },
+        {
+          "head_sha": "541cc3ca3657",
+          "merge_sha": "b031eef21434",
+          "merged_at": "2026-11-15T14:15:24Z",
+          "number": 174,
+          "resolved": true,
+          "title": "Silent init script: nested shadow roots and MediaElementAudioSourceNode constructor"
+        },
+        {
+          "head_sha": "8fc4a1008635",
+          "merge_sha": "712ecc2ba557",
+          "merged_at": "2026-11-15T14:38:04Z",
+          "number": 175,
+          "resolved": true,
+          "title": "feat(qc): delivery QC stage re-derived from the sealed artefacts (captions vs dialogue, timebase, loudness)"
+        },
+        {
+          "head_sha": "eb42e228a9bd",
+          "merge_sha": "09a75acec8e1",
+          "merged_at": "2026-11-15T15:08:02Z",
+          "number": 183,
+          "resolved": true,
+          "title": "fix(qc): non-finite report numbers and coerced frame counts (cold review of 175)"
+        },
+        {
+          "head_sha": "c11f50d56a82",
+          "merge_sha": "76b72e1163ea",
+          "merged_at": "2026-11-15T15:18:41Z",
+          "number": 181,
+          "resolved": true,
+          "title": "fix(qc): cover every dialogue span, independent detector, per-check independence (cold review of 175)"
+        },
+        {
+          "head_sha": "573be707f823",
+          "merge_sha": "607f17201a28",
+          "merged_at": "2026-11-15T15:31:25Z",
+          "number": 182,
+          "resolved": true,
+          "title": "fix(qc): burned frames must show the caption text (cold review of 175)"
+        },
+        {
+          "head_sha": "843701e0dd1c",
+          "merge_sha": "53bab60c338d",
+          "merged_at": "2026-11-15T15:37:31Z",
+          "number": 176,
+          "resolved": true,
+          "title": "feat(demo): one-command synthetic short film (chain to checked mp4, stable hashes)"
+        },
+        {
+          "head_sha": "e00b646d7b59",
+          "merge_sha": "5f0f2cb8e3c6",
+          "merged_at": "2026-11-15T16:12:57Z",
+          "number": 188,
+          "resolved": true,
+          "title": "fix(chain): host-independent chain hash (fill report sealed float intermediates)"
+        }
+      ],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "b11dc9087fbb",
+          "number": 194,
+          "resolved": true,
+          "title": "fix(demo): judge the mp4's sound and chroma, not only loudness and luma (fresh cold review of 176)",
+          "updated_at": "2026-11-15T17:31:44Z"
+        }
+      ],
+      "red_at_merge": [
+        {
+          "check": "CodeRabbit",
+          "conclusion": "neutral",
+          "executed_steps": null,
+          "head_sha": "eb8ca57fbbcc",
+          "merged_at": "2026-11-13T21:30:48Z",
+          "pr": 133,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Combined checks and Python package",
+          "conclusion": "failure",
+          "executed_steps": 6,
+          "head_sha": "eb8ca57fbbcc",
+          "merged_at": "2026-11-13T21:30:48Z",
+          "pr": 133,
+          "run_id": 43511317830,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "eb8ca57fbbcc",
+          "merged_at": "2026-11-13T21:30:48Z",
+          "pr": 133,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Combined checks and Python package",
+          "conclusion": "success",
+          "executed_steps": 9,
+          "head_sha": "ea621a7a2d29",
+          "merged_at": "2026-11-14T00:13:41Z",
+          "pr": 136,
+          "run_id": 43532719057,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "ea621a7a2d29",
+          "merged_at": "2026-11-14T00:13:41Z",
+          "pr": 136,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Combined checks and Python package",
+          "conclusion": "success",
+          "executed_steps": 9,
+          "head_sha": "5c7ac507176f",
+          "merged_at": "2026-11-14T00:23:05Z",
+          "pr": 137,
+          "run_id": 43533797792,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "5c7ac507176f",
+          "merged_at": "2026-11-14T00:23:05Z",
+          "pr": 137,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "CodeRabbit",
+          "conclusion": "cancelled",
+          "executed_steps": null,
+          "head_sha": "7130e88bb936",
+          "merged_at": "2026-11-14T00:27:18Z",
+          "pr": 138,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Combined checks and Python package",
+          "conclusion": "success",
+          "executed_steps": 9,
+          "head_sha": "7130e88bb936",
+          "merged_at": "2026-11-14T00:27:18Z",
+          "pr": 138,
+          "run_id": 43534277556,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "7130e88bb936",
+          "merged_at": "2026-11-14T00:27:18Z",
+          "pr": 138,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Sourcery review",
+          "conclusion": "failure",
+          "executed_steps": null,
+          "head_sha": "89f112a82056",
+          "merged_at": "2026-11-15T02:09:30Z",
+          "pr": 142,
+          "run_id": null,
+          "state": "red"
+        }
+      ],
+      "visibility_live": "public"
+    },
+    {
+      "ci": [
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 4,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607441695,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "CodeQL",
+          "workflow_id": 249107154
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 34,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 5,
+          "on_current_head": true,
+          "run_id": 43607441754,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Public source verification",
+          "workflow_id": 387195228
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 1,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607441645,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Release Drafter",
+          "workflow_id": 249107155
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 2,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607441677,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Secret Scan",
+          "workflow_id": 249107156
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T00:28:59Z",
+          "event": "schedule",
+          "executed_steps": 1,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43658373569,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Stale Issue Detection",
+          "workflow_id": 229421784
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 5,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607441707,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Stewardship Protocol",
+          "workflow_id": 357154363
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-10-25T23:39:52Z",
+          "event": "push",
+          "executed_steps": 4,
+          "head_sha": "bae5c6d7e4d3",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 40245773989,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Validate ACE boundaries",
+          "workflow_id": 383561621
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:18Z",
+          "event": "dynamic",
+          "executed_steps": 3,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607450233,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "npm_and_yarn in /. for follow-redirects, minimatch - Update #1704476594",
+          "workflow_id": 207424590
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:11Z",
+          "event": "dynamic",
+          "executed_steps": 7,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 3,
+          "on_current_head": true,
+          "run_id": 43607440361,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "pages build and deployment",
+          "workflow_id": 234406701
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-14T14:56:12Z",
+          "event": "push",
+          "executed_steps": 6,
+          "head_sha": "d9c4ed16539f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43607441738,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "validate-dependencies",
+          "workflow_id": 360119118
+        }
+      ],
+      "default_branch": "main",
+      "full_name": "4444J99/generative-multimedia-spatial-environment",
+      "issues_open_count": 1,
+      "issues_updated": [],
+      "listing": "full",
+      "main": {
+        "committed_at": "2026-11-14T14:56:08Z",
+        "pr": 196,
+        "resolved": true,
+        "sha": "d9c4ed16539f",
+        "title": "chore(deps): bump the npm-deps group across 2 directories with 10 updates (#196)"
+      },
+      "merged_other_base": 0,
+      "merged_prs": [
+        {
+          "head_sha": "1dbba004d930",
+          "merge_sha": "d9c4ed16539f",
+          "merged_at": "2026-11-14T14:56:09Z",
+          "number": 196,
+          "resolved": true,
+          "title": "chore(deps): bump the npm-deps group across 2 directories with 10 updates"
+        }
+      ],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "d99bca5ab363",
+          "number": 197,
+          "resolved": true,
+          "title": "chore(deps-dev): bump follow-redirects from 1.16.1 to 1.16.3",
+          "updated_at": "2026-11-14T14:57:51Z"
+        }
+      ],
+      "red_at_merge": [],
+      "visibility_live": "public"
+    },
+    {
+      "ci": [
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T15:57:29Z",
+          "event": "push",
+          "executed_steps": 24,
+          "head_sha": "a8db3c385841",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43732736875,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "CI Verification",
+          "workflow_id": 355108794
+        },
+        {
+          "conclusion": "skipped",
+          "created_at": "2026-11-15T17:23:49Z",
+          "event": "workflow_run",
+          "executed_steps": 0,
+          "head_sha": "a8db3c385841",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43740869218,
+          "status": "completed",
+          "verdict": "skipped",
+          "workflow": "Current State Projection",
+          "workflow_id": 374172715
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T15:57:29Z",
+          "event": "push",
+          "executed_steps": 9,
+          "head_sha": "a8db3c385841",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43732736917,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Package Verification",
+          "workflow_id": 374100086
+        },
+        {
+          "conclusion": "failure",
+          "created_at": "2026-11-15T15:57:29Z",
+          "event": "push",
+          "executed_steps": 10,
+          "head_sha": "a8db3c385841",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43732736912,
+          "status": "completed",
+          "verdict": "red",
+          "workflow": "macOS WebKit playback",
+          "workflow_id": 410723795
+        }
+      ],
+      "default_branch": "main",
+      "full_name": "4444J99/tool-video-loop-compositor",
+      "issues_open_count": 11,
+      "issues_updated": [
+        {
+          "number": 102,
+          "state": "closed",
+          "title": "macOS WebKit sustained-playback gate fails on hosted-runner stalls, on a different arm each run",
+          "updated_at": "2026-11-15T03:26:14Z"
+        },
+        {
+          "number": 111,
+          "state": "closed",
+          "title": "Two CI test flakes are test races, not product races",
+          "updated_at": "2026-11-15T07:08:22Z"
+        },
+        {
+          "number": 113,
+          "state": "closed",
+          "title": "Tests: a child killed by an outside SIGTERM fails the suite as if the code were wrong",
+          "updated_at": "2026-11-15T07:32:23Z"
+        },
+        {
+          "number": 115,
+          "state": "open",
+          "title": "sustained-playback: cancelled blob request stamped 27 ms before its resource-retired event is classified unexpected",
+          "updated_at": "2026-11-15T14:55:41Z"
+        },
+        {
+          "number": 120,
+          "state": "closed",
+          "title": "Make browser test silence permanent: mute-at-source helper for every Playwright launch",
+          "updated_at": "2026-11-15T14:52:12Z"
+        },
+        {
+          "number": 122,
+          "state": "open",
+          "title": "Silent launch lint reports launches named inside string text (fail-closed by design)",
+          "updated_at": "2026-11-15T15:03:23Z"
+        },
+        {
+          "number": 124,
+          "state": "open",
+          "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
+          "updated_at": "2026-11-15T15:00:36Z"
+        },
+        {
+          "number": 126,
+          "state": "open",
+          "title": "Studio: after a deferred loop-mode handoff, edits that keep the slot cancel the retry and leave the old variant for good; docs/authoring/STUDIO_PLAYBACK.md says the next edit fixes it (P2)",
+          "updated_at": "2026-11-15T16:44:40Z"
+        },
+        {
+          "number": 127,
+          "state": "open",
+          "title": "Studio: evolve mode can replace a sibling panel inside the retry window, which changes the loops and silently drops the retry (P2, plausible, not traced)",
+          "updated_at": "2026-11-15T16:44:41Z"
+        },
+        {
+          "number": 128,
+          "state": "open",
+          "title": "Studio: a playback-only relaunch that lands while the toggle's own launch is in flight loses the remaining retry attempts (P3)",
+          "updated_at": "2026-11-15T16:44:42Z"
+        },
+        {
+          "number": 129,
+          "state": "open",
+          "title": "Studio: the retry delay is the longest resident's loop, not the deferred panel's (P3)",
+          "updated_at": "2026-11-15T16:44:43Z"
+        },
+        {
+          "number": 130,
+          "state": "open",
+          "title": "Tests: test_a_late_deferral_belongs_to_its_own_request_not_the_next_one cannot detect the bug it names; paused/held/hidden wait and reattempt counts untested (P3)",
+          "updated_at": "2026-11-15T16:44:44Z"
+        }
+      ],
+      "listing": "full",
+      "main": {
+        "committed_at": "2026-11-15T15:57:26Z",
+        "pr": 123,
+        "resolved": true,
+        "sha": "a8db3c385841",
+        "title": "Silent launch lint: pin fail-closed string and regex-literal behaviour (#123)"
+      },
+      "merged_other_base": 0,
+      "merged_prs": [
+        {
+          "head_sha": "9da64f59adbd",
+          "merge_sha": "ac2a657718dc",
+          "merged_at": "2026-11-13T17:37:56Z",
+          "number": 96,
+          "resolved": true,
+          "title": "Keep clip succession and native loop recovery moving"
+        },
+        {
+          "head_sha": "5b17ffd34ae5",
+          "merge_sha": "ab9eafa58890",
+          "merged_at": "2026-11-13T23:25:27Z",
+          "number": 100,
+          "resolved": true,
+          "title": "Prove native loop seams from frame callbacks, not tick cadence"
+        },
+        {
+          "head_sha": "d82405694aaf",
+          "merge_sha": "c06c9ded1fba",
+          "merged_at": "2026-11-13T23:34:25Z",
+          "number": 101,
+          "resolved": true,
+          "title": "Native Mac app: Studio over the user's Photos videos, with per-clip sound"
+        },
+        {
+          "head_sha": "8b4fdcbda6c8",
+          "merge_sha": "aa9203767f5d",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "number": 103,
+          "resolved": true,
+          "title": "Accept media-clock progress while the page is starved of animation frames (#102 playback, 1-of-4 decks)"
+        },
+        {
+          "head_sha": "3cd0009b40ad",
+          "merge_sha": "930f3d02df62",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "number": 104,
+          "resolved": true,
+          "title": "Author mosaics for 8 to 12 loops; Studio bundle stays at 2 to 7"
+        },
+        {
+          "head_sha": "20e38212e3ae",
+          "merge_sha": "67e3f3e83bbb",
+          "merged_at": "2026-11-14T13:48:32Z",
+          "number": 107,
+          "resolved": true,
+          "title": "Measure PageCadence over the most recent window, not since the hold began"
+        },
+        {
+          "head_sha": "e57d639b6eeb",
+          "merge_sha": "8cd15f6b557c",
+          "merged_at": "2026-11-14T14:49:08Z",
+          "number": 108,
+          "resolved": true,
+          "title": "Fix red WebKit seek-cohort candidate: accept yielded standby epoch"
+        },
+        {
+          "head_sha": "352df4775f97",
+          "merge_sha": "5cef46f58708",
+          "merged_at": "2026-11-15T03:26:13Z",
+          "number": 109,
+          "resolved": true,
+          "title": "Gate: judge held-source native gaps on the recent signal (fixes #102)"
+        },
+        {
+          "head_sha": "296b58315eb6",
+          "merge_sha": "3201d7906774",
+          "merged_at": "2026-11-15T04:58:10Z",
+          "number": 106,
+          "resolved": true,
+          "title": "Versioned seeded roll: Studio offers authored 8 to 12, existing share links keep their rolls"
+        },
+        {
+          "head_sha": "0c23e5b02626",
+          "merge_sha": "f7f45baeeb35",
+          "merged_at": "2026-11-15T07:08:20Z",
+          "number": 112,
+          "resolved": true,
+          "title": "Harden two flaky browser tests (fixes #111)"
+        },
+        {
+          "head_sha": "29b26dde2021",
+          "merge_sha": "9c4edf4abe2b",
+          "merged_at": "2026-11-15T07:32:22Z",
+          "number": 114,
+          "resolved": true,
+          "title": "Tests: retry a child killed by an outside SIGTERM, name the signal when it persists"
+        },
+        {
+          "head_sha": "ad40f03d5b04",
+          "merge_sha": "f702b4731bf6",
+          "merged_at": "2026-11-15T10:12:51Z",
+          "number": 116,
+          "resolved": true,
+          "title": "Tests: route browser node/ffmpeg children through the SIGTERM retry helper and lint for new bare children"
+        },
+        {
+          "head_sha": "ecc5ac941df2",
+          "merge_sha": "bf4651be524d",
+          "merged_at": "2026-11-15T11:50:53Z",
+          "number": 118,
+          "resolved": true,
+          "title": "Tests: render, lab and proxy children use the SIGTERM retry helper; lint resolves chained names and args="
+        },
+        {
+          "head_sha": "68cdcefd2942",
+          "merge_sha": "9bba9253a973",
+          "merged_at": "2026-11-15T13:31:57Z",
+          "number": 117,
+          "resolved": true,
+          "title": "Studio: re-attempt a deferred loop-mode handoff, bounded (fixes #115)"
+        },
+        {
+          "head_sha": "0e0429bf04c5",
+          "merge_sha": "f4abaa92995c",
+          "merged_at": "2026-11-15T13:52:31Z",
+          "number": 119,
+          "resolved": true,
+          "title": "Tests: tools children go through the SIGTERM retry helper, the lint allowlist is empty"
+        },
+        {
+          "head_sha": "9411d7c05797",
+          "merge_sha": "97070de09ff7",
+          "merged_at": "2026-11-15T14:52:10Z",
+          "number": 121,
+          "resolved": true,
+          "title": "Make browser test silence permanent: silent launch helper, init script, lint"
+        },
+        {
+          "head_sha": "391ab12a5d8b",
+          "merge_sha": "a8db3c385841",
+          "merged_at": "2026-11-15T15:57:26Z",
+          "number": 123,
+          "resolved": true,
+          "title": "Silent launch lint: pin fail-closed string and regex-literal behaviour"
+        }
+      ],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "62c059235539",
+          "number": 110,
+          "resolved": true,
+          "title": "Name the authored range 2..12 in the JS compiler refusal (review of #103 and #104)",
+          "updated_at": "2026-11-14T21:41:31Z"
+        },
+        {
+          "draft": false,
+          "head_sha": "850d06f61a51",
+          "number": 125,
+          "resolved": true,
+          "title": "Fix the macOS WebKit gate's measurement races (issue 115)",
+          "updated_at": "2026-11-15T17:02:39Z"
+        },
+        {
+          "draft": false,
+          "head_sha": "cf6035d3ba0a",
+          "number": 131,
+          "resolved": true,
+          "title": "Docs: a deferred loop-mode handoff is not repaired by an edit that keeps the slot (fresh cold review of #117)",
+          "updated_at": "2026-11-15T16:46:14Z"
+        }
+      ],
+      "red_at_merge": [
+        {
+          "check": "CodeRabbit",
+          "conclusion": "cancelled",
+          "executed_steps": null,
+          "head_sha": "9da64f59adbd",
+          "merged_at": "2026-11-13T17:37:56Z",
+          "pr": 96,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "5b17ffd34ae5",
+          "merged_at": "2026-11-13T23:25:27Z",
+          "pr": 100,
+          "run_id": 43520539530,
+          "state": "red"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "d82405694aaf",
+          "merged_at": "2026-11-13T23:34:25Z",
+          "pr": 101,
+          "run_id": 43522056557,
+          "state": "red"
+        },
+        {
+          "check": "Cloudflare Pages",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "CodeRabbit",
+          "conclusion": "cancelled",
+          "executed_steps": null,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": 43535269037,
+          "state": "late"
+        },
+        {
+          "check": "test",
+          "conclusion": "success",
+          "executed_steps": 24,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": 43535269191,
+          "state": "late"
+        },
+        {
+          "check": "wheel-smoke",
+          "conclusion": "success",
+          "executed_steps": 9,
+          "head_sha": "8b4fdcbda6c8",
+          "merged_at": "2026-11-14T00:36:04Z",
+          "pr": 103,
+          "run_id": 43535269061,
+          "state": "late"
+        },
+        {
+          "check": "Cloudflare Pages",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "CodeRabbit",
+          "conclusion": "cancelled",
+          "executed_steps": null,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "Sourcery review",
+          "conclusion": "skipped",
+          "executed_steps": null,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "semgrep-cloud-platform/scan",
+          "conclusion": "success",
+          "executed_steps": null,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": null,
+          "state": "late"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": 43542063966,
+          "state": "late"
+        },
+        {
+          "check": "test",
+          "conclusion": "failure",
+          "executed_steps": 16,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": 43542063991,
+          "state": "late"
+        },
+        {
+          "check": "wheel-smoke",
+          "conclusion": "success",
+          "executed_steps": 9,
+          "head_sha": "3cd0009b40ad",
+          "merged_at": "2026-11-14T01:41:15Z",
+          "pr": 104,
+          "run_id": 43542063951,
+          "state": "late"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "e57d639b6eeb",
+          "merged_at": "2026-11-14T14:49:08Z",
+          "pr": 108,
+          "run_id": 43602874166,
+          "state": "red"
+        },
+        {
+          "check": "test",
+          "conclusion": "failure",
+          "executed_steps": 16,
+          "head_sha": "352df4775f97",
+          "merged_at": "2026-11-15T03:26:13Z",
+          "pr": 109,
+          "run_id": 43664919393,
+          "state": "red"
+        },
+        {
+          "check": "test",
+          "conclusion": "failure",
+          "executed_steps": 16,
+          "head_sha": "29b26dde2021",
+          "merged_at": "2026-11-15T07:32:22Z",
+          "pr": 114,
+          "run_id": 43683392376,
+          "state": "red"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "ecc5ac941df2",
+          "merged_at": "2026-11-15T11:50:53Z",
+          "pr": 118,
+          "run_id": 43703043724,
+          "state": "red"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 9,
+          "head_sha": "0e0429bf04c5",
+          "merged_at": "2026-11-15T13:52:31Z",
+          "pr": 119,
+          "run_id": 43715818127,
+          "state": "red"
+        },
+        {
+          "check": "sustained-playback",
+          "conclusion": "failure",
+          "executed_steps": 10,
+          "head_sha": "9411d7c05797",
+          "merged_at": "2026-11-15T14:52:10Z",
+          "pr": 121,
+          "run_id": 43722666733,
+          "state": "red"
+        }
+      ],
+      "visibility_live": "public"
+    },
+    {
+      "ci": [
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T16:46:05Z",
+          "event": "workflow_run",
+          "executed_steps": 6,
+          "head_sha": "a4228cf70d9f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43737315706,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Publish historical edition",
+          "workflow_id": 378203161
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-10-25T11:20:52Z",
+          "event": "push",
+          "executed_steps": 4,
+          "head_sha": "997ec5c60acc",
+          "jobs": 1,
+          "on_current_head": false,
+          "run_id": 40188480208,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Validate ACE boundaries",
+          "workflow_id": 383561624
+        },
+        {
+          "conclusion": "success",
+          "created_at": "2026-11-15T16:45:15Z",
+          "event": "push",
+          "executed_steps": 5,
+          "head_sha": "a4228cf70d9f",
+          "jobs": 1,
+          "on_current_head": true,
+          "run_id": 43737237012,
+          "status": "completed",
+          "verdict": "pass",
+          "workflow": "Verify historical edition",
+          "workflow_id": 377877480
+        }
+      ],
+      "default_branch": "main",
+      "full_name": "4444J99/timed-text-navigation-loop",
+      "issues_open_count": 13,
+      "issues_updated": [
+        {
+          "number": 71,
+          "state": "closed",
+          "title": "Rendition export: the C3 audiovisual track is asserted, not produced",
+          "updated_at": "2026-11-15T05:49:06Z"
+        },
+        {
+          "number": 73,
+          "state": "closed",
+          "title": "Make browser check silence permanent: mute-at-source launch helper",
+          "updated_at": "2026-11-15T12:51:19Z"
+        },
+        {
+          "number": 76,
+          "state": "closed",
+          "title": "Silent init script: nested shadow roots and the MediaElementAudioSourceNode constructor",
+          "updated_at": "2026-11-15T14:15:12Z"
+        },
+        {
+          "number": 79,
+          "state": "closed",
+          "title": "Cold review of PR 75/72: verifier accepted wrong-pitch audio, extra streams, local edits, edited receipt text",
+          "updated_at": "2026-11-15T14:53:51Z"
+        },
+        {
+          "number": 81,
+          "state": "closed",
+          "title": "verifier: audio pitch never compared (wrong-pitch/noise in cue windows passes)",
+          "updated_at": "2026-11-15T14:53:52Z"
+        },
+        {
+          "number": 82,
+          "state": "closed",
+          "title": "verifier: hidden low-level audio below 1500 outside cue windows passes",
+          "updated_at": "2026-11-15T14:53:53Z"
+        },
+        {
+          "number": 83,
+          "state": "closed",
+          "title": "verifier: extra audio/subtitle streams in the MP4 pass",
+          "updated_at": "2026-11-15T14:53:55Z"
+        },
+        {
+          "number": 84,
+          "state": "closed",
+          "title": "verifier: localised pixel edit passes whole-frame PSNR",
+          "updated_at": "2026-11-15T14:53:56Z"
+        },
+        {
+          "number": 85,
+          "state": "closed",
+          "title": "verifier/exporter: receipt claims, kind, file.name and extra keys unchecked; frame size unbounded",
+          "updated_at": "2026-11-15T14:53:57Z"
+        },
+        {
+          "number": 86,
+          "state": "closed",
+          "title": "CI: hosted verify skipped every ffmpeg test (exporter and verifier tests never ran on CI)",
+          "updated_at": "2026-11-15T14:53:58Z"
+        },
+        {
+          "number": 87,
+          "state": "closed",
+          "title": "Silent launch lint: a string holding a slash pair hides a later launch on the same line",
+          "updated_at": "2026-11-15T15:15:50Z"
+        },
+        {
+          "number": 89,
+          "state": "open",
+          "title": "Silent init cannot reach media in a closed declarative shadow root (WebKit residual)",
+          "updated_at": "2026-11-15T15:00:39Z"
+        },
+        {
+          "number": 91,
+          "state": "open",
+          "title": "verify: audio is downmixed to mono before checking, so a second voice in the stereo side channel passes (P1)",
+          "updated_at": "2026-11-15T16:39:11Z"
+        },
+        {
+          "number": 92,
+          "state": "open",
+          "title": "verify: audio is resampled to 22050 Hz before checking, so a tone above ~11 kHz passes (P1)",
+          "updated_at": "2026-11-15T16:39:12Z"
+        },
+        {
+          "number": 93,
+          "state": "open",
+          "title": "verify: MIN_TONE_RATIO 0.5 lets other sound carry as much energy as the cue inside every window (P2)",
+          "updated_at": "2026-11-15T16:39:14Z"
+        },
+        {
+          "number": 94,
+          "state": "open",
+          "title": "verify: the 60 ms guard band around each cue window is checked by nothing (P2)",
+          "updated_at": "2026-11-15T16:39:15Z"
+        },
+        {
+          "number": 95,
+          "state": "open",
+          "title": "verify: chroma is never compared, so a colour change that keeps luma passes (P2)",
+          "updated_at": "2026-11-15T16:39:16Z"
+        },
+        {
+          "number": 96,
+          "state": "open",
+          "title": "verify: duplicate JSON keys in receipt.json pass, so the 'pinned' claims text is pinned only in the parsed object (P2)",
+          "updated_at": "2026-11-15T16:39:17Z"
+        },
+        {
+          "number": 97,
+          "state": "open",
+          "title": "verify: receipt file.ffmpeg is still free text (P3)",
+          "updated_at": "2026-11-15T16:39:17Z"
+        },
+        {
+          "number": 98,
+          "state": "open",
+          "title": "verify: receipt.seed is never compared with the normalised run seed (P3)",
+          "updated_at": "2026-11-15T16:39:18Z"
+        },
+        {
+          "number": 99,
+          "state": "open",
+          "title": "verify: thresholds let larger edits through and the calibration comment is thinner than stated (P3)",
+          "updated_at": "2026-11-15T16:39:19Z"
+        },
+        {
+          "number": 100,
+          "state": "open",
+          "title": "verify: the whole frame stream is re-rendered and hashed before ffprobe looks at the MP4 (P3, cost)",
+          "updated_at": "2026-11-15T16:39:20Z"
+        },
+        {
+          "number": 101,
+          "state": "open",
+          "title": "verify: cue-track.wav that is a directory throws a raw EISDIR and exits 2 instead of a named failed check (P3)",
+          "updated_at": "2026-11-15T16:39:21Z"
+        },
+        {
+          "number": 102,
+          "state": "open",
+          "title": "tests/CI: with CI set and no ffmpeg the tests die on path.join(undefined) instead of a clear message; CI=false counts as true (P3)",
+          "updated_at": "2026-11-15T16:39:22Z"
+        }
+      ],
+      "listing": "full",
+      "main": {
+        "committed_at": "2026-11-15T16:45:11Z",
+        "pr": 90,
+        "resolved": true,
+        "sha": "a4228cf70d9f",
+        "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2 (#90)"
+      },
+      "merged_other_base": 0,
+      "merged_prs": [
+        {
+          "head_sha": "e5c071bba448",
+          "merge_sha": "147ce932054b",
+          "merged_at": "2026-11-15T05:49:05Z",
+          "number": 72,
+          "resolved": true,
+          "title": "feat(six-encounters): deterministic audiovisual rendition export with receipt"
+        },
+        {
+          "head_sha": "d96a5300affe",
+          "merge_sha": "a431472a1929",
+          "merged_at": "2026-11-15T12:51:17Z",
+          "number": 74,
+          "resolved": true,
+          "title": "Make browser check silence permanent: silent launch helper, init script, lint"
+        },
+        {
+          "head_sha": "62360532b2a4",
+          "merge_sha": "1c84c4c26429",
+          "merged_at": "2026-11-15T14:08:45Z",
+          "number": 75,
+          "resolved": true,
+          "title": "feat(six-encounters): replay verifier for rendition exports"
+        },
+        {
+          "head_sha": "8d5861ccddfa",
+          "merge_sha": "88b6a794200a",
+          "merged_at": "2026-11-15T14:15:10Z",
+          "number": 77,
+          "resolved": true,
+          "title": "Silent init script: nested shadow roots and MediaElementAudioSourceNode constructor"
+        },
+        {
+          "head_sha": "a212cee4064e",
+          "merge_sha": "fbafa296310d",
+          "merged_at": "2026-11-15T14:43:19Z",
+          "number": 78,
+          "resolved": true,
+          "title": "test(six-encounters): assert all 11 review checks complete"
+        },
+        {
+          "head_sha": "1f42d1c3a119",
+          "merge_sha": "61b99f6d002e",
+          "merged_at": "2026-11-15T14:53:49Z",
+          "number": 80,
+          "resolved": true,
+          "title": "fix(six-encounters): harden replay verifier after cold review of #75"
+        },
+        {
+          "head_sha": "acd7f1da6d9b",
+          "merge_sha": "292984ab4548",
+          "merged_at": "2026-11-15T15:15:48Z",
+          "number": 88,
+          "resolved": true,
+          "title": "Silent launch lint: string-aware comment stripping (fail-closed)"
+        },
+        {
+          "head_sha": "012382a01bfc",
+          "merge_sha": "a4228cf70d9f",
+          "merged_at": "2026-11-15T16:45:12Z",
+          "number": 90,
+          "resolved": true,
+          "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2"
+        }
+      ],
+      "open_prs": [
+        {
+          "draft": false,
+          "head_sha": "567f1c007a7c",
+          "number": 103,
+          "resolved": true,
+          "title": "fix(six-encounters): verifier side-channel, band, canonical-receipt and seed holes (fresh cold review of #80)",
+          "updated_at": "2026-11-15T16:41:40Z"
+        }
+      ],
+      "red_at_merge": [],
+      "visibility_live": "public"
+    }
+  ],
+  "schema": 1,
+  "since": "2026-11-13",
+  "started_at": "2026-11-15T17:31:20Z"
+}
