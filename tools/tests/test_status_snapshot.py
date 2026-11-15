@@ -352,7 +352,8 @@ class FakeGh:
     """Answers the gh calls collect_repo makes from fixed data and records every call."""
 
     def __init__(self, private=False, bad_merge=False, truncate=False, empty_message=False, many_checks=False,
-                 many_jobs=False, head_moves=False, other_base=False, job404=False):
+                 many_jobs=False, head_moves=False, other_base=False, job404=False, job_other_error=False):
+        self.job_other_error = job_other_error
         self.other_base = other_base
         self.job404 = job404
         self.head_moves = head_moves
@@ -418,7 +419,9 @@ class FakeGh:
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/58/job/69"}]}
             if path == "repos/o/r/actions/jobs/66":
                 if self.job404:
-                    raise status.StatusError("gh api repos/o/r/actions/jobs failed: HTTP 404 Not Found")
+                    raise status.NotFound("gh api repos/o/r/actions/jobs failed: HTTP 404 Not Found")
+                if self.job_other_error:
+                    raise status.StatusError("gh api repos/o/r/actions/jobs/66404 failed: HTTP 403 rate limited")
                 return {"steps": [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "failure"}]}
             if path.startswith("repos/o/r/commits/") and "/status?" in path:
                 return {"total_count": 4, "statuses": [
@@ -547,6 +550,26 @@ class CollectTests(unittest.TestCase):
         repo = status.collect_repo(FakeGh(job404=True), "o/r", "2026-11-13")
         test = [e for e in repo["red_at_merge"] if e["check"] == "test"][0]
         self.assertEqual((test["state"], test["executed_steps"]), ("red", None))
+
+    def test_only_a_real_404_degrades_and_foreign_urls_are_not_followed(self):
+        with self.assertRaises(status.StatusError):
+            status.collect_repo(FakeGh(job_other_error=True), "o/r", "2026-11-13")
+
+        class Foreign(FakeGh):
+            def __call__(self, *args):
+                out = super().__call__(*args)
+                if "--slurp" not in args and args[-1].startswith("repos/o/r/commits/") and "check-runs" in args[-1]:
+                    out["check_runs"][0]["details_url"] = "https://github.com/other/repo/actions/runs/55/job/66"
+                return out
+        repo = status.collect_repo(Foreign(), "o/r", "2026-11-13")
+        test = [e for e in repo["red_at_merge"] if e["check"] == "test"][0]
+        self.assertEqual((test["run_id"], test["executed_steps"]), (None, None))
+
+    def test_other_base_note_is_shown_beside_a_table_too(self):
+        snap = snapshot()
+        snap["repositories"][0]["merged_other_base"] = 3
+        self.assertIn("3 pull request(s) merged into a branch other than `main` in this window are not listed.",
+                      status.render(snap, manifest()))
 
     def test_container_bookkeeping_steps_are_not_work(self):
         steps = [{"name": "Initialize containers", "status": "completed", "conclusion": "success"},
@@ -684,6 +707,29 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.cli("--since", "2026-11-13", "--out", str(out), "--snapshot-out", str(blocked))[0], 2)
         self.assertFalse(out.exists(), "page must not be written when the snapshot cannot be")
         self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["manifest.json", "snap.json"])
+
+    def test_existing_dated_page_is_not_overwritten_without_replace(self):
+        self.fake_collect(snapshot())
+        out, snap = self.tmp / "p.md", self.tmp / "s.json"
+        args = ("--since", "2026-11-13", "--out", str(out), "--snapshot-out", str(snap))
+        self.assertEqual(self.cli(*args)[0], 0)
+        first = out.read_text(encoding="utf-8")
+        changed = snapshot()
+        changed["captured_at"] = "2026-11-15T17:00:00Z"
+        self.fake_collect(changed)
+        self.assertEqual(self.cli(*args)[0], 2)
+        self.assertEqual(out.read_text(encoding="utf-8"), first)
+        self.assertEqual(self.cli(*args, "--replace")[0], 0)
+        self.assertNotEqual(out.read_text(encoding="utf-8"), first)
+
+    def test_failed_second_rename_restores_both_files(self):
+        page, snap = self.tmp / "p.md", self.tmp / "s.json"
+        page.write_text("old page", encoding="utf-8")
+        snap.mkdir()  # renaming a file over a directory fails
+        with self.assertRaises(OSError):
+            status.write_all([(page, "new page"), (snap, "new snapshot")])
+        self.assertEqual(page.read_text(encoding="utf-8"), "old page")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["manifest.json", "p.md", "s.json", "snap.json"])
 
     def test_check_needs_snapshot_and_out(self):
         self.assertEqual(self.cli("--check", "--since", "2026-11-13")[0], 2)

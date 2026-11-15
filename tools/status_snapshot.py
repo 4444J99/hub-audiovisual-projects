@@ -56,12 +56,16 @@ MERGE_STATES = ("red", "cannot-start", "no-steps", "late", "pending", "cancelled
 EXECUTED = {"success", "failure", "cancelled", "timed_out"}
 LIST_LIMIT = 300
 RUN_WINDOW = 100  # newest default-branch runs examined; a workflow idle for longer is not listed
-ACTIONS_JOB = re.compile(r"/actions/runs/(\d+)/job/(\d+)")
+ACTIONS_JOB = r"https://github\.com/%s/actions/runs/(\d+)/job/(\d+)"
 GENERATED_NOTE = identity_contract.GENERATED_STATUS_MARKER + " Do not edit by hand: regenerate from the snapshot. -->"
 
 
 class StatusError(Exception):
     """A snapshot cannot be taken or rendered without citing something unresolved."""
+
+
+class NotFound(StatusError):
+    """GitHub answered HTTP 404 for a read."""
 
 
 # --------------------------------------------------------------------------- gh
@@ -74,7 +78,8 @@ def gh_json(*args):
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise StatusError("gh could not run: %s" % exc) from exc
     if done.returncode != 0:
-        raise StatusError("gh %s failed: %s" % (" ".join(args[:3]), done.stderr.strip()[:300]))
+        kind = NotFound if re.search(r"\bHTTP 404\b", done.stderr) else StatusError
+        raise kind("gh %s failed: %s" % (" ".join(args[:3]), done.stderr.strip()[:300]))
     try:
         return json.loads(done.stdout) if done.stdout.strip() else None
     except ValueError as exc:
@@ -257,17 +262,15 @@ def _red_at_merge(gh, repo, pr, restricted):
     for check in sorted(checks, key=lambda c: (c["name"], c["id"])):
         run_id = None
         executed = None
-        match = ACTIONS_JOB.search(check.get("details_url") or "")
+        match = re.fullmatch(ACTIONS_JOB % re.escape(repo), check.get("details_url") or "", flags=re.IGNORECASE)
         if match:
             run_id = int(match.group(1))
             if check.get("status") == "completed" and check.get("conclusion") in RED_CONCLUSIONS | {"success"}:
                 try:
                     job = gh("api", "repos/%s/actions/jobs/%s" % (repo, match.group(2)))
                     executed = count_executed(job.get("steps"))
-                except StatusError as exc:
-                    if "404" not in str(exc):
-                        raise
-                    executed = None  # expired logs or a foreign details_url: steps are not observable
+                except NotFound:
+                    executed = None  # expired logs: steps are not observable
         state = classify_check(check, pr["mergedAt"], 1 if executed is None else executed)
         if state is None:
             continue
@@ -470,6 +473,8 @@ def render(snap, manifest):
             lines.append("| %s | %s | `%s` | %s |" % (_pr(name, pr["number"]), c(pr["title"]),
                                                        pr["merge_sha"][:SHOW_LEN], pr["merged_at"]))
         lines.append("")
+        if note:
+            lines += [note, ""]
 
     lines += ["## Open pull requests", ""]
     for repo in snap["repositories"]:
@@ -561,14 +566,24 @@ def _gate_surface(page, manifest):
 
 
 def write_all(files):
-    """Write every (path, text) beside its target first, then rename them all, so a failed run leaves no
-    partial, unvalidated or orphaned file."""
+    """Write every (path, text) beside its target first, then rename them all; if a rename fails, put back what
+    each target held before, so a failed run leaves neither a partial pair nor an orphaned page."""
     staged = [(path.with_name(path.name + ".tmp"), path, text) for path, text in files]
+    before = {path: (path.read_bytes() if path.exists() else None) for _, path, _ in staged}
+    done = []
     try:
         for tmp, _, text in staged:
             tmp.write_text(text, encoding="utf-8")
         for tmp, path, _ in staged:
             tmp.replace(path)
+            done.append(path)
+    except BaseException:
+        for path in done:
+            if before[path] is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_bytes(before[path])
+        raise
     finally:
         for tmp, _, _ in staged:
             tmp.unlink(missing_ok=True)
@@ -583,6 +598,8 @@ def main(argv=None):
     parser.add_argument("--since", help="list pull requests merged on or after YYYY-MM-DD (live mode; required)")
     parser.add_argument("--snapshot-out", type=Path, help="write the live snapshot JSON here")
     parser.add_argument("--out", type=Path, help="write the page here (default: stdout)")
+    parser.add_argument("--replace", action="store_true",
+                        help="live mode: allow overwriting an existing dated page and snapshot (otherwise refused)")
     parser.add_argument("--check", action="store_true", help="fail (exit 1) when --out differs from the rendering")
     args = parser.parse_args(argv)
     try:
@@ -592,6 +609,10 @@ def main(argv=None):
             raise StatusError("live mode writes a page and its snapshot together: give both --out and --snapshot-out")
         if args.from_snapshot and args.snapshot_out:
             raise StatusError("--snapshot-out applies to live mode only")
+        if not args.from_snapshot and not args.replace:
+            for target in (args.out, args.snapshot_out):
+                if target and target.exists():
+                    raise StatusError("%s already exists: a later capture is a new dated page; pass --replace to overwrite" % target)
         manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
         if args.from_snapshot:
             snap = json.loads(args.from_snapshot.read_text(encoding="utf-8"))

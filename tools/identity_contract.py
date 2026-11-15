@@ -381,7 +381,10 @@ def validate_public_surface(paths, read, baseline, manifest):
     documents that already carried reviewed source bindings to the SHA-256 of their
     reviewed content: any edit to such a document (new binding, new internal path)
     fails until the baseline entry is re-reviewed. All other documents may carry no
-    source bindings at all.
+    source bindings at all, with one deliberate exception: a generated status page
+    (docs/status/*.md starting with the generator marker, beside its snapshot) and
+    that snapshot may name a repository whose manifest record carries
+    status_listing "name-only", and then only its bare name.
     """
     bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
     if bad:

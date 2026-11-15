@@ -10,7 +10,7 @@ The files in [`docs/status/`](status/) are generated, not hand-written. Hand-wri
 ## Commands
 
 ```sh
-# live: collect, keep the snapshot, render the page
+# live: collect, keep the snapshot, render the page (an existing dated page is refused unless --replace)
 python3 tools/status_snapshot.py --since 2026-11-13 --date 2026-11-15 \
     --snapshot-out docs/status/2026-11-15.snapshot.json --out docs/status/2026-11-15.md   # live mode needs both --out and --snapshot-out
 
