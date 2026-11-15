@@ -352,7 +352,9 @@ class FakeGh:
     """Answers the gh calls collect_repo makes from fixed data and records every call."""
 
     def __init__(self, private=False, bad_merge=False, truncate=False, empty_message=False, many_checks=False,
-                 many_jobs=False, head_moves=False):
+                 many_jobs=False, head_moves=False, other_base=False, job404=False):
+        self.other_base = other_base
+        self.job404 = job404
         self.head_moves = head_moves
         self.head_reads = 0
         self.empty_message = empty_message
@@ -415,6 +417,8 @@ class FakeGh:
                     {"id": 5, "name": "ok", "status": "completed", "conclusion": "success",
                      "completed_at": "2026-11-15T09:00:00Z", "details_url": "https://github.com/o/r/actions/runs/58/job/69"}]}
             if path == "repos/o/r/actions/jobs/66":
+                if self.job404:
+                    raise status.StatusError("gh api repos/o/r/actions/jobs failed: HTTP 404 Not Found")
                 return {"steps": [{"status": "completed", "conclusion": "success"}, {"status": "completed", "conclusion": "failure"}]}
             if path.startswith("repos/o/r/commits/") and "/status?" in path:
                 return {"total_count": 4, "statuses": [
@@ -436,6 +440,8 @@ class FakeGh:
                 count = status.LIST_LIMIT if self.truncate else 1
                 base = {"number": 12, "title": "Second", "mergedAt": "2026-11-15T10:00:00Z",
                         "mergeCommit": {"oid": full(1)}, "headRefOid": full(4), "baseRefName": "main"}
+                if self.other_base:
+                    return [base, dict(base, number=14, baseRefName="feature")]
                 return [dict(base, number=12 + i) for i in range(count)] if self.truncate else [base]
             return [{"number": 13, "title": "Open one", "isDraft": False, "headRefOid": full(5),
                      "updatedAt": "2026-11-15T11:00:00Z", "baseRefName": "main"}]
@@ -525,6 +531,46 @@ class CollectTests(unittest.TestCase):
     def test_snapshot_fields_the_page_does_not_print_are_gated_too(self):
         snap = snapshot()
         snap["repositories"][0]["main"]["title"] = "mentions hidden-thing"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_pull_requests_merged_into_other_branches_are_counted_not_hidden(self):
+        repo = status.collect_repo(FakeGh(other_base=True), "o/r", "2026-11-13")
+        self.assertEqual((len(repo["merged_prs"]), repo["merged_other_base"]), (1, 1))
+        snap = snapshot()
+        snap["repositories"][0]["merged_other_base"] = 2
+        snap["repositories"][0]["merged_prs"] = []
+        snap["repositories"][0]["red_at_merge"] = []
+        self.assertIn("2 pull request(s) merged into a branch other than `main`", status.render(snap, manifest()))
+
+    def test_expired_job_degrades_to_not_observed_but_other_errors_abort(self):
+        repo = status.collect_repo(FakeGh(job404=True), "o/r", "2026-11-13")
+        test = [e for e in repo["red_at_merge"] if e["check"] == "test"][0]
+        self.assertEqual((test["state"], test["executed_steps"]), ("red", None))
+
+    def test_container_bookkeeping_steps_are_not_work(self):
+        steps = [{"name": "Initialize containers", "status": "completed", "conclusion": "success"},
+                 {"name": "Stop containers", "status": "completed", "conclusion": "success"}]
+        self.assertEqual(status.count_executed(steps), 0)
+        self.assertEqual(status.count_executed([{"name": "Post coverage comment", "status": "completed",
+                                                  "conclusion": "success"}]), 1)
+
+    def test_short_restricted_names_are_matched_on_word_boundaries_only(self):
+        self.assertEqual(status.redact("Inside abc x", {"abc"}), "Inside (restricted repository) x")
+        self.assertEqual(status.redact("abcdef", {"abc"}), "abcdef")
+
+    def test_dates_must_be_real_and_ordered(self):
+        for bad in ("2026-13-45", "2026-02-30", "Nov 15", None):
+            self.assertFalse(status.real_date(bad))
+        self.assertTrue(status.real_date("2026-11-15"))
+        snap = snapshot()
+        snap["since"] = "2026-11-20"
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_name_only_list_must_be_marked_in_the_manifest(self):
+        snap = snapshot()
+        snap["name_only"] = ["hidden-thing"]
         with self.assertRaises(status.StatusError):
             status.render(snap, manifest())
 
@@ -647,6 +693,12 @@ class CliTests(unittest.TestCase):
         code, _, err = self.cli("--from-snapshot", str(self.tmp / "snap.json"), "--out", str(self.tmp / "nodir" / "p.md"))
         self.assertEqual(code, 2)
         self.assertIn("refused", err)
+
+    def test_live_dates_are_validated_before_any_network_call(self):
+        out, snap = str(self.tmp / "p.md"), str(self.tmp / "s.json")
+        for since, date in (("2026-11-13", "2026-11-10"), ("2026-13-45", "2026-11-15"), ("2026-11-13", "2026-02-30")):
+            code, _, err = self.cli("--since", since, "--date", date, "--out", out, "--snapshot-out", snap)
+            self.assertEqual(code, 2, (since, date))
 
     def test_live_mode_requires_since(self):
         self.assertEqual(self.cli()[0], 2)

@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-15T17:16:49Z",
+  "captured_at": "2026-11-15T17:38:53Z",
   "date": "2026-11-15",
   "name_only": [],
   "omitted_count": 2,
@@ -58,6 +58,7 @@
         "sha": "7e5a45aa9259",
         "title": "docs: audiovisual status 2026-11-15 corrections (dated sibling) (#43)"
       },
+      "merged_other_base": 0,
       "merged_prs": [
         {
           "head_sha": "633d875f059c",
@@ -135,11 +136,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "2289d8c471fd",
+          "head_sha": "a676238eba27",
           "number": 44,
           "resolved": true,
           "title": "Generate status pages from live GitHub state (status_snapshot.py); regenerate 2026-11-15",
-          "updated_at": "2026-11-15T17:04:27Z"
+          "updated_at": "2026-11-15T17:17:23Z"
         }
       ],
       "red_at_merge": [
@@ -322,6 +323,7 @@
         "sha": "5f0f2cb8e3c6",
         "title": "fix(chain): host-independent chain hash (fill report sealed float intermediates) (#188)"
       },
+      "merged_other_base": 0,
       "merged_prs": [
         {
           "head_sha": "eb8ca57fbbcc",
@@ -663,11 +665,11 @@
       "open_prs": [
         {
           "draft": false,
-          "head_sha": "5448846a521a",
+          "head_sha": "b11dc9087fbb",
           "number": 194,
           "resolved": true,
           "title": "fix(demo): judge the mp4's sound and chroma, not only loudness and luma (fresh cold review of 176)",
-          "updated_at": "2026-11-15T17:06:11Z"
+          "updated_at": "2026-11-15T17:31:44Z"
         }
       ],
       "red_at_merge": [
@@ -939,6 +941,7 @@
         "sha": "d9c4ed16539f",
         "title": "chore(deps): bump the npm-deps group across 2 directories with 10 updates (#196)"
       },
+      "merged_other_base": 0,
       "merged_prs": [
         {
           "head_sha": "1dbba004d930",
@@ -980,13 +983,13 @@
         },
         {
           "conclusion": "skipped",
-          "created_at": "2026-11-15T17:06:17Z",
+          "created_at": "2026-11-15T17:23:49Z",
           "event": "workflow_run",
           "executed_steps": 0,
           "head_sha": "a8db3c385841",
           "jobs": 1,
           "on_current_head": true,
-          "run_id": 43739201788,
+          "run_id": 43740869218,
           "status": "completed",
           "verdict": "skipped",
           "workflow": "Current State Projection",
@@ -1106,6 +1109,7 @@
         "sha": "a8db3c385841",
         "title": "Silent launch lint: pin fail-closed string and regex-literal behaviour (#123)"
       },
+      "merged_other_base": 0,
       "merged_prs": [
         {
           "head_sha": "9da64f59adbd",
@@ -1696,6 +1700,7 @@
         "sha": "a4228cf70d9f",
         "title": "feat(six-encounters): captions.vtt silent equivalent of the cue track, receipt v2 (#90)"
       },
+      "merged_other_base": 0,
       "merged_prs": [
         {
           "head_sha": "e5c071bba448",
@@ -1778,5 +1783,5 @@
   ],
   "schema": 1,
   "since": "2026-11-13",
-  "started_at": "2026-11-15T17:12:57Z"
+  "started_at": "2026-11-15T17:31:20Z"
 }

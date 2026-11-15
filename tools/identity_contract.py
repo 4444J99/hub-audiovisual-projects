@@ -214,7 +214,6 @@ def validate_publication(manifest):
     for repo in manifest["repositories"]:
         if type(repo.get("private")) is not bool:
             raise ValueError("Repository privacy must be explicit")
-    for repo in manifest["repositories"]:
         if repo.get("status_listing") not in (None, "name-only"):
             raise ValueError("status_listing must be absent or name-only")
         if repo.get("status_listing") and not repo["private"]:
@@ -392,6 +391,7 @@ def validate_public_surface(paths, read, baseline, manifest):
     listed_sets = (private_repository_names(manifest, allow_listed=True),
                    private_qualified_origins(manifest, allow_listed=True))
     paths = list(paths)
+    path_set = set(paths)
     for path in paths:
         if not in_surface_scope(path):
             continue
@@ -400,8 +400,8 @@ def validate_public_surface(paths, read, baseline, manifest):
         # manifest marks name-only.
         listed = path.startswith(STATUS_PAGE_PREFIX) and (
             (path.endswith(".md") and text.startswith(GENERATED_STATUS_MARKER)
-             and path[:-3] + SNAPSHOT_SUFFIX in paths)
-            or (path.endswith(SNAPSHOT_SUFFIX) and path[:-len(SNAPSHOT_SUFFIX)] + ".md" in paths
+             and path[:-3] + SNAPSHOT_SUFFIX in path_set)
+            or (path.endswith(SNAPSHOT_SUFFIX) and path[:-len(SNAPSHOT_SUFFIX)] + ".md" in path_set
                 and read(path[:-len(SNAPSHOT_SUFFIX)] + ".md").startswith(GENERATED_STATUS_MARKER)))
         private, qualified = listed_sets if listed else strict
         if path in baseline:

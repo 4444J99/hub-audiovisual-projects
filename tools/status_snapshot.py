@@ -35,6 +35,7 @@ import datetime
 import json
 import re
 import subprocess
+import urllib.parse
 import sys
 from pathlib import Path
 
@@ -45,6 +46,7 @@ SCHEMA = 1
 HUB = "4444J99/hub-audiovisual-projects"
 SHA_LEN = 12
 SHOW_LEN = 7
+SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside longer tokens
 HEX = re.compile(r"[0-9a-f]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
@@ -82,16 +84,25 @@ def gh_json(*args):
 # ------------------------------------------------------------------- classifying
 
 
+def real_date(value):
+    """True for an actual calendar date written YYYY-MM-DD."""
+    try:
+        datetime.date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return False
+    return DATE.match(value) is not None
+
+
 def short(sha):
     return sha[:SHA_LEN]
 
 
-SYNTHETIC_STEPS = ("Set up job", "Complete job")
+SYNTHETIC_STEPS = ("Set up job", "Complete job", "Initialize containers", "Stop containers")
 
 
 def count_executed(steps):
     """Steps of the workflow itself that ran: completed with a conclusion other than skipped. GitHub's own
-    'Set up job', 'Complete job' and 'Post Run ...' bookkeeping steps do not count, so a job whose every real step
+    'Set up job', 'Complete job', container and 'Post Run ...' bookkeeping steps do not count, so a job whose every real step
     was skipped, or that died before its first step, has zero."""
     return sum(1 for s in steps or []
                if s.get("status") == "completed" and s.get("conclusion") in EXECUTED
@@ -152,7 +163,7 @@ def tracked_repositories(manifest):
 
 
 def _is_ancestor(gh, repo, sha, branch):
-    cmp = gh("api", "repos/%s/compare/%s...%s" % (repo, sha, branch))
+    cmp = gh("api", "repos/%s/compare/%s...%s" % (repo, sha, urllib.parse.quote(branch, safe="")))
     return isinstance(cmp, dict) and cmp.get("status") in ("ahead", "identical")
 
 
@@ -174,8 +185,10 @@ def collect_repo(gh, repo, since, restricted=()):
         raise StatusError("%s: merged pull request list reached the %d limit; narrow --since" % (repo, LIST_LIMIT))
     merged = []
     red = []
+    other_base = 0
     for pr in sorted(merged_raw, key=lambda p: (p["mergedAt"], p["number"])):
         if pr["baseRefName"] != branch:
+            other_base += 1
             continue
         merge_sha = (pr.get("mergeCommit") or {}).get("oid")
         if not merge_sha or not _is_ancestor(gh, repo, merge_sha, branch):
@@ -192,7 +205,7 @@ def collect_repo(gh, repo, since, restricted=()):
                  "head_sha": short(p["headRefOid"]), "updated_at": p["updatedAt"], "resolved": True}
                 for p in sorted(open_raw, key=lambda p: p["number"])]
 
-    runs = gh("api", "repos/%s/actions/runs?branch=%s&per_page=%d" % (repo, branch, RUN_WINDOW))["workflow_runs"]
+    runs = gh("api", "repos/%s/actions/runs?branch=%s&per_page=%d" % (repo, urllib.parse.quote(branch, safe=""), RUN_WINDOW))["workflow_runs"]
     latest = {}
     for run in sorted(runs, key=lambda r: (r["created_at"], r["id"]), reverse=True):
         if run.get("event") in ("pull_request", "pull_request_target") or run.get("head_sha") is None:
@@ -220,7 +233,7 @@ def collect_repo(gh, repo, since, restricted=()):
         "full_name": repo, "listing": "full", "visibility_live": "public", "default_branch": branch,
         "main": {"sha": short(head_sha), "title": redact((head["commit"]["message"].splitlines() or [""])[0], restricted),
                  "committed_at": head["commit"]["committer"]["date"], "pr": head_pr, "resolved": True},
-        "merged_prs": merged, "open_prs": open_prs, "ci": ci, "red_at_merge": red,
+        "merged_prs": merged, "merged_other_base": other_base, "open_prs": open_prs, "ci": ci, "red_at_merge": red,
         "issues_open_count": len(issues_open),
         "issues_updated": [{"number": i["number"], "title": redact(i["title"], restricted), "state": i["state"].lower(),
                             "updated_at": i["updatedAt"]} for i in sorted(issues_updated, key=lambda i: i["number"])],
@@ -248,8 +261,13 @@ def _red_at_merge(gh, repo, pr, restricted):
         if match:
             run_id = int(match.group(1))
             if check.get("status") == "completed" and check.get("conclusion") in RED_CONCLUSIONS | {"success"}:
-                job = gh("api", "repos/%s/actions/jobs/%s" % (repo, match.group(2)))
-                executed = count_executed(job.get("steps"))
+                try:
+                    job = gh("api", "repos/%s/actions/jobs/%s" % (repo, match.group(2)))
+                    executed = count_executed(job.get("steps"))
+                except StatusError as exc:
+                    if "404" not in str(exc):
+                        raise
+                    executed = None  # expired logs or a foreign details_url: steps are not observable
         state = classify_check(check, pr["mergedAt"], 1 if executed is None else executed)
         if state is None:
             continue
@@ -277,7 +295,8 @@ def redact(text, restricted):
     """Replace restricted repository names in free text so they never enter a snapshot."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)), " ".join(str(text).split()))
     for name in sorted(restricted, key=len, reverse=True):
-        text = re.sub(re.escape(name), "(restricted repository)", text, flags=re.IGNORECASE)
+        pattern = re.escape(name) if len(name) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(name)
+        text = re.sub(pattern, "(restricted repository)", text, flags=re.IGNORECASE)
     return text
 
 
@@ -303,8 +322,10 @@ def validate_snapshot(snap):
     if not isinstance(snap, dict) or snap.get("schema") != SCHEMA:
         raise StatusError("unsupported snapshot schema")
     for key in ("date", "since"):
-        if not isinstance(snap.get(key), str) or not DATE.match(snap[key]):
-            raise StatusError("snapshot %s must be YYYY-MM-DD" % key)
+        if not isinstance(snap.get(key), str) or not real_date(snap[key]):
+            raise StatusError("snapshot %s must be a real YYYY-MM-DD date" % key)
+    if snap["since"] > snap["date"]:
+        raise StatusError("snapshot since is after its date")
     if not isinstance(snap.get("repositories"), list) or not snap["repositories"]:
         raise StatusError("snapshot lists no repositories")
 
@@ -382,6 +403,9 @@ def _step_text(entry):
 
 def render(snap, manifest):
     validate_snapshot(snap)
+    marked = {r["full_name"].split("/", 1)[1] for r in manifest["repositories"] if identity_contract.name_listed(r)}
+    if not set(snap.get("name_only", [])) <= marked:
+        raise StatusError("snapshot lists a name the manifest does not mark name-only")
     allowed = {HUB} | {r["full_name"] for r in manifest["repositories"] if not r["private"]}
     for repo in snap["repositories"]:
         if repo["full_name"] not in allowed:
@@ -435,8 +459,11 @@ def render(snap, manifest):
         name = repo["full_name"]
         lines.append("### %s" % name.split("/", 1)[1])
         lines.append("")
+        stacked = repo.get("merged_other_base", 0)
+        note = ("%d pull request(s) merged into a branch other than `%s` in this window are not listed." % (
+            stacked, repo["default_branch"])) if stacked else ""
         if not repo["merged_prs"]:
-            lines += ["No pull request merged in this window.", ""]
+            lines += ["No pull request merged into `%s` in this window." % repo["default_branch"], ""] + ([note, ""] if note else [])
             continue
         lines += ["| Pull request | Title | Merge commit | Merged at |", "|---|---|---|---|"]
         for pr in repo["merged_prs"]:
@@ -511,7 +538,7 @@ def render(snap, manifest):
 
 def _restricted_substrings(manifest):
     """Restricted names that must not appear even fused into a longer token (the matcher's word boundary would miss them)."""
-    return {n.lower() for n in identity_contract.private_repository_names(manifest, allow_listed=True) if len(n) >= 4}
+    return {n.lower() for n in identity_contract.private_repository_names(manifest, allow_listed=True) if len(n) >= SUBSTRING_MIN}
 
 
 def _gate_surface(page, manifest):
@@ -569,12 +596,12 @@ def main(argv=None):
         if args.from_snapshot:
             snap = json.loads(args.from_snapshot.read_text(encoding="utf-8"))
         else:
-            if not args.since or not DATE.match(args.since):
-                raise StatusError("--since YYYY-MM-DD is required in live mode")
+            if not args.since or not real_date(args.since):
+                raise StatusError("--since YYYY-MM-DD (a real date) is required in live mode")
             now = datetime.datetime.now(datetime.timezone.utc)
             date = args.date or now.strftime("%Y-%m-%d")
-            if not DATE.match(date):
-                raise StatusError("--date must be YYYY-MM-DD")
+            if not real_date(date) or args.since > date:
+                raise StatusError("--date must be a real YYYY-MM-DD date on or after --since")
             snap = collect_snapshot(manifest, args.since, date, now.strftime("%Y-%m-%dT%H:%M:%SZ"))
         page = render(snap, manifest)
         if args.check:
