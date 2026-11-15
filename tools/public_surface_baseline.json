@@ -48,7 +48,7 @@
   "projects/time-moment-brief/README.md": "84e1a806d629ffd1ea1309c669c3d1d2ce6ba131de681c8ce567baebcc86910e",
   "repositories/danse-source/README.md": "23c9bcb2748f37e714c205dfbc7796851eb39b7fa4d7ab2060b60d018f44f89e",
   "repositories/time-moment-brief/README.md": "352ae8df05dfa842698633ca20896e1d2fb31956b7c83e4c83ed0102f5640596",
-  "tools/verify_tmb_composition.cjs": "36f1dca0047318311a1d9e3d98e01d5a9f397e12fd291d1be0c84a6b15b7703f",
+  "tools/verify_tmb_composition.cjs": "23ae6924f6acf01778065b5d3fcdcc1872fc143c601d93b856ec616e798f0186",
   "tools/workspace_layout.py": "102cd4fb8857333f7fdcea540121fbd000fe25e084d9617f88afc2cd37bab19d",
   "workspace-manifest.json": "3f9344d307d6c7eea8d1e60e1a9fdfa61b1e7ba6181c3a2d9aeb95564c73f003"
  }
