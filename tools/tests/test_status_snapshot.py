@@ -510,7 +510,7 @@ class CollectTests(unittest.TestCase):
                                   "slow": ("late", 1, 59), "hollow": ("no-steps", 0, 60)})
         self.assertEqual(repo["issues_open_count"], 2)
         self.assertEqual(repo["issues_updated"][0]["state"], "closed")
-        status.validate_snapshot({"schema": 1, "date": "2026-11-15", "since": "2026-11-13", "started_at": "w", "captured_at": "x",
+        status.validate_snapshot({"schema": 1, "date": "2026-11-15", "since": "2026-11-13", "started_at": "2026-11-15T15:00:00Z", "captured_at": "2026-11-15T16:00:00Z",
                                   "repositories": [repo], "name_only": [], "omitted_count": 0})
 
     def test_unresolvable_merge_commit_is_refused(self):
@@ -705,6 +705,68 @@ class CollectTests(unittest.TestCase):
         status.collect_repo = lambda *a, **k: (_ for _ in ()).throw(status.HeadMoved("always"))
         with self.assertRaises(status.HeadMoved):
             status.collect_repo_retrying(None, "o/r", "d", set(), set())
+
+    def test_header_fields_are_validated(self):
+        for change in ({"captured_at": "<script>x</script>"}, {"started_at": "2026-11-15T17:00:00Z"},
+                       {"started_at": "yesterday"}):
+            snap = snapshot()
+            snap.update(change)
+            with self.assertRaises(status.StatusError):
+                status.render(snap, manifest())
+        snap = snapshot()
+        snap["repositories"][0]["default_branch"] = "  "
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_impossible_timestamps_and_unexpected_fields_are_refused(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        for mutate in (lambda s: s.update(captured_at="2026-99-99T99:99:99Z"),
+                       lambda s: s.update(started_at="\uff12\uff10\uff12\uff16-11-15T10:00:00Z"),
+                       lambda s: repo(s)["issues_updated"][0].update(state="<i>"),
+                       lambda s: repo(s)["issues_updated"][0].update(updated_at="soon"),
+                       lambda s: repo(s)["merged_prs"][0].update(merged_at="<b>"),
+                       lambda s: repo(s)["ci"][0].update(conclusion="<i>"),
+                       lambda s: repo(s)["red_at_merge"][0].update(conclusion="<i>")):
+            snap = snapshot()
+            mutate(snap)
+            with self.assertRaises(status.StatusError):
+                status.render(snap, manifest())
+
+    def test_tagged_marked_name_does_not_swallow_the_next_name(self):
+        out = status.redact("named:secretrepo and named@x", {"secretrepo"}, {"named"})
+        self.assertNotIn("secretrepo", out)
+        self.assertNotIn("ecretrepo", out)
+        self.assertTrue(out.startswith(status.PLACEHOLDER + status.PLACEHOLDER))
+
+    def test_counters_and_head_citation_gaps_are_refused(self):
+        repo = lambda s: s["repositories"][0]  # noqa: E731
+        for mutate in (lambda s: repo(s)["issues_updated"][0].update(number="<b>"),
+                       lambda s: repo(s)["issues_updated"][0].update(number=True),
+                       lambda s: repo(s).update(issues_open_count="2"),
+                       lambda s: repo(s).update(merged_other_base="x"),
+                       lambda s: repo(s)["main"].update(pr=None)):  # head is listed as merge commit of #12
+            snap = snapshot()
+            mutate(snap)
+            with self.assertRaises(status.StatusError):
+                status.render(snap, manifest())
+
+    def test_legal_but_unusual_branch_names_render(self):
+        snap = snapshot()
+        snap["repositories"][0]["default_branch"] = "release+1#`x"
+        snap["repositories"][0]["merged_prs"] = []
+        snap["repositories"][0]["red_at_merge"] = []
+        page = status.render(snap, manifest())
+        self.assertIn("No pull request merged into `release+1#'x` in this window.", page)
+
+    def test_head_pull_request_must_match_the_head_when_listed(self):
+        snap = snapshot()
+        snap["repositories"][0]["main"]["pr"] = 11  # listed, but its merge commit is not the head
+        with self.assertRaises(status.StatusError):
+            status.render(snap, manifest())
+
+    def test_marked_and_restricted_passes_do_not_garble_each_other(self):
+        self.assertEqual(status.redact("fix: see a/named-thing", {"rest"}, {"named-thing"}),
+                         "fix: see a" + status.PLACEHOLDER)
 
     def test_head_that_moves_during_collection_is_refused(self):
         with self.assertRaises(status.StatusError):

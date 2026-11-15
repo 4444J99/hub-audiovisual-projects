@@ -50,6 +50,8 @@ SHOW_LEN = 7
 PLACEHOLDER = "(restricted repository)"
 SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside longer tokens
 HEX = re.compile(r"[0-9a-f]+")
+TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
+WORD = re.compile(r"[a-z0-9_-]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 FULL_PIN = re.compile(r"\b[0-9a-f]{40}\b", re.IGNORECASE)
@@ -110,6 +112,22 @@ def gh_json(*args):
 
 
 # ------------------------------------------------------------------- classifying
+
+
+def real_timestamp(value):
+    """True for an actual UTC instant written YYYY-MM-DDTHH:MM:SSZ (ASCII digits only)."""
+    if not isinstance(value, str) or TIMESTAMP.fullmatch(value) is None:
+        return False
+    try:
+        datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return False
+    return True
+
+
+def code(text):
+    """Text for a markdown code span: single line, no backticks."""
+    return " ".join(str(text).split()).replace("`", "'")
 
 
 def real_date(value):
@@ -338,15 +356,15 @@ def redact(text, restricted, marked=()):
     keeps its bare name, but a path, owner-qualified or tagged use of it (``name/x``, ``a/name``, ``name:x``,
     ``name@x``, ``name#1``) is replaced, since the exemption covers the bare name only."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)).lower(), " ".join(str(text).split()))
+    parts = []
     for name in sorted(marked, key=len, reverse=True):
         n = re.escape(name)
-        text = re.sub(r"(?i)[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#]\S" % (n, n, n),
-                      PLACEHOLDER, text)
-    parts = [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
-             for n in sorted(restricted, key=len, reverse=True)]
+        parts.append(r"[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#](?=\S)" % (n, n, n))
+    parts += [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
+              for n in sorted(restricted, key=len, reverse=True)]
     if not parts:
         return text
-    # One pass over alternatives, so a replacement is never re-matched by a later name.
+    # One pass over every alternative, so a replacement is never re-matched by a later name.
     return re.sub("|".join(parts), PLACEHOLDER, text, flags=re.IGNORECASE)
 
 
@@ -393,15 +411,40 @@ def validate_snapshot(snap):
     def sha_ok(value):
         return isinstance(value, str) and len(value) == SHA_LEN and HEX.fullmatch(value) is not None
 
-    if (not isinstance(snap.get("captured_at"), str) or not isinstance(snap.get("started_at"), str)
-            or type(snap.get("omitted_count")) is not int):
-        raise StatusError("snapshot lacks started_at, captured_at or omitted_count")
+    if type(snap.get("omitted_count")) is not int:
+        raise StatusError("snapshot lacks omitted_count")
+    for key in ("started_at", "captured_at"):
+        if not real_timestamp(snap.get(key)):
+            raise StatusError("snapshot %s must be a real YYYY-MM-DDTHH:MM:SSZ instant" % key)
+    if snap["started_at"] > snap["captured_at"]:
+        raise StatusError("snapshot started_at is after captured_at")
     if not all(isinstance(n, str) and NAME.fullmatch(n) for n in snap.get("name_only", [])):
         raise StatusError("snapshot name_only must be a list of bare repository names")
     for repo in snap["repositories"]:
         name = repo.get("full_name", "?")
         if repo.get("listing") != "full" or repo.get("visibility_live") != "public":
             raise StatusError("%s: only repositories confirmed public may be listed in full" % name)
+        if not isinstance(repo.get("default_branch"), str) or not repo["default_branch"].strip():
+            raise StatusError("%s: default branch name is missing" % name)
+        for pr in repo.get("merged_prs", []):
+            if not real_timestamp(pr.get("merged_at")):
+                raise StatusError("%s: merged pull request %r has no real merge time" % (name, pr.get("number")))
+        for field in ("issues_open_count", "merged_other_base"):
+            if type(repo.get(field, 0)) is not int or repo.get(field, 0) < 0:
+                raise StatusError("%s: %s is not a count" % (name, field))
+        for issue in repo.get("issues_updated", []):
+            if type(issue.get("number")) is not int or issue["number"] <= 0:
+                raise StatusError("%s: issue number is not a positive integer" % name)
+            if issue.get("state") not in ("open", "closed") or not real_timestamp(issue.get("updated_at")):
+                raise StatusError("%s: issue %r has an unknown state or update time" % (name, issue.get("number")))
+        for run in repo.get("ci", []):
+            for field in ("status", "conclusion"):
+                if run.get(field) is not None and not (isinstance(run[field], str) and WORD.fullmatch(run[field])):
+                    raise StatusError("%s: CI run %r has an unexpected %s" % (name, run.get("run_id"), field))
+        for entry in repo.get("red_at_merge", []):
+            if entry.get("conclusion") is not None and not (isinstance(entry["conclusion"], str)
+                                                            and WORD.fullmatch(entry["conclusion"])):
+                raise StatusError("%s: red-at-merge fact has an unexpected conclusion" % name)
         main = repo.get("main") or {}
         if not sha_ok(main.get("sha")) or main.get("resolved") is not True:
             raise StatusError("%s: main head is not resolved" % name)
@@ -415,6 +458,11 @@ def validate_snapshot(snap):
             if type(pr.get("number")) is not int or pr.get("resolved") is not True or not sha_ok(pr.get("head_sha")):
                 raise StatusError("%s: open pull request %r is not resolved" % (name, pr.get("number")))
         by_number = {pr["number"]: pr for pr in repo.get("merged_prs", [])}
+        if main.get("pr") is None and any(p["merge_sha"] == main["sha"] for p in repo.get("merged_prs", [])):
+            raise StatusError("%s: main head is a listed merge commit but cites no pull request" % name)
+        in_window = by_number.get(main.get("pr"))
+        if in_window is not None and in_window["merge_sha"] != main["sha"]:
+            raise StatusError("%s: main head cites pull request #%d whose merge commit is a different commit" % (name, main["pr"]))
         for entry in repo.get("red_at_merge", []):
             cited = by_number.get(entry.get("pr"))
             if cited is None or entry.get("head_sha") != cited["head_sha"] or entry.get("merged_at") != cited["merged_at"]:
@@ -514,7 +562,7 @@ def render(snap, manifest):
         if older:
             older_note.append("**%s** — latest `%s` run of %d workflow(s) is on an older head, so their state on the "
                               "current head is unknown: %s." % (
-                                  name.split("/", 1)[1], repo["default_branch"], len(older), "; ".join(
+                                  name.split("/", 1)[1], code(repo["default_branch"]), len(older), "; ".join(
                                       "%s ([%d](%s), `%s`, %s)" % (c(r["workflow"]), r["run_id"],
                                                                    _url(name, "actions/runs", r["run_id"]),
                                                                    r["head_sha"][:SHOW_LEN], r["verdict"])
@@ -530,9 +578,9 @@ def render(snap, manifest):
         lines.append("")
         stacked = repo.get("merged_other_base", 0)
         note = ("%d pull request(s) merged into a branch other than `%s` in this window are not listed." % (
-            stacked, repo["default_branch"])) if stacked else ""
+            stacked, code(repo["default_branch"]))) if stacked else ""
         if not repo["merged_prs"]:
-            lines += ["No pull request merged into `%s` in this window." % repo["default_branch"], ""] + ([note, ""] if note else [])
+            lines += ["No pull request merged into `%s` in this window." % code(repo["default_branch"]), ""] + ([note, ""] if note else [])
             continue
         lines += ["| Pull request | Title | Merge commit | Merged at |", "|---|---|---|---|"]
         for pr in repo["merged_prs"]:
