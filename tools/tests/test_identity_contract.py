@@ -86,7 +86,8 @@ class IdentityContract(unittest.TestCase):
         bare = "Source lives in a private repository; pinned commit %s." % self.SHA
         plain = "Repository: time-moment-brief\nCommit: %s\nPath: assets/a.wav" % self.SHA
         for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md",
-                     "projects/time-moment-brief/source-provenance.md", "artworks/a/notes.txt"):
+                     "projects/time-moment-brief/source-provenance.md", "artworks/a/notes.txt",
+                     "tools/source-provenance.md", ".github/source-provenance.md"):
             for text in (named, bare, plain):
                 with self.assertRaisesRegex(ValueError, "private owner"):
                     self.surface({path: text})
@@ -100,6 +101,15 @@ class IdentityContract(unittest.TestCase):
                       "\nrepository 4444J99/old-owner at %s asset media/unreviewed-take-42.wav" % self.SHA):
             with self.assertRaisesRegex(ValueError, "private owner"):
                 self.surface({"README.md": old + added}, base)
+
+    def test_private_origin_survives_public_continuation_with_same_basename(self):
+        text = "origin https://github.com/organvm/the-thing-without-a-name.git at %s media/take.wav" % self.SHA
+        with self.assertRaisesRegex(ValueError, "private owner"):
+            self.surface({"docs/new-source-provenance.md": text})
+
+    def test_public_navigation_slugs_are_not_source_names(self):
+        self.surface({"docs/nav.md": "[engine](../repositories/deterministic-performance-engine/README.md) "
+                                     "and synchronized-generation-playback"})
 
     def test_public_commit_url_is_not_a_private_pin(self):
         text = "private custody note; review at https://github.com/4444J99/hub-audiovisual-projects/commit/%s" % self.SHA

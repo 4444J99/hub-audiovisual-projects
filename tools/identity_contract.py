@@ -252,20 +252,27 @@ def validate_publication(manifest):
 
 PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
 SURFACE_SUFFIXES = (".md", ".json", ".txt", ".yml", ".yaml")
-OWNER_REF = re.compile(r"(?:github\.com[/:])?\b4444J99/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
+OWNER_REF = re.compile(r"(?:github\.com[/:])?\b(?:4444J99|organvm)/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
 PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444J99/([A-Za-z0-9._-]+)/commit/[0-9a-f]{7,40}")
 COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
 PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
 
+# The validator, its tests and the baseline necessarily spell out private names as fixtures.
+SURFACE_FIXTURES = frozenset({"tools/identity_contract.py", "tools/tests/test_identity_contract.py",
+                              "tools/public_surface_baseline.json"})
+
+
 def in_surface_scope(path):
-    """Every tracked text document except the tools and CI that carry test fixtures."""
-    return path.endswith(SURFACE_SUFFIXES) and not path.startswith(("tools/", ".github/"))
+    """Every tracked text document, including tools/ and CI, except the exact reviewed fixtures."""
+    return path.endswith(SURFACE_SUFFIXES) and path not in SURFACE_FIXTURES
 
 
-def _repository_names(repo):
+def _repository_names(repo, navigation=True):
     names = {repo["full_name"].split("/", 1)[1]}
-    names.update(repo[k] for k in ("key", "directory_slug", "local_path") if repo.get(k))
+    names.update(repo[k] for k in ("key", "local_path") if repo.get(k))
+    if navigation and repo.get("directory_slug"):
+        names.add(repo["directory_slug"])
     origin = repo.get("configured_origin")
     if origin:
         names.add(origin.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git"))
@@ -288,15 +295,30 @@ def private_repository_names(manifest):
     names = set()
     for repo in manifest["repositories"]:
         if repo["private"]:
-            names |= _repository_names(repo)
+            names |= _repository_names(repo, navigation=False)
     return names - public_repository_names(manifest)
 
 
-def surface_facts(text, public, private=frozenset()):
+def private_qualified_origins(manifest):
+    """Owner-qualified private identities, which stay private even when a public remote shares the basename."""
+    found = set()
+    for repo in manifest["repositories"]:
+        if repo["private"]:
+            found.add(repo["full_name"])
+            origin = repo.get("configured_origin")
+            if origin:
+                found.add("/".join(origin.removesuffix(".git").rstrip("/").rsplit("/", 2)[-2:]))
+    return found
+
+
+def surface_facts(text, public, private=frozenset(), qualified=frozenset()):
     """Source bindings in a document: non-public owner references, known private
     repository names (with or without an owner prefix) and 40-hex commit pins
     that accompany either of them or the word private."""
     refs = set(OWNER_REF.findall(text)) - public
+    for identity_ in qualified:
+        if re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(identity_) + r"(?![A-Za-z0-9_-])", text):
+            refs.add(identity_)
     for name in private:
         if re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(name) + r"(?![A-Za-z0-9_-])", text):
             refs.add(name)
@@ -326,6 +348,7 @@ def validate_public_surface(paths, read, baseline, manifest):
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
     public = public_repository_names(manifest)
     private = private_repository_names(manifest)
+    qualified = private_qualified_origins(manifest)
     for path in paths:
         if not in_surface_scope(path):
             continue
@@ -335,7 +358,7 @@ def validate_public_surface(paths, read, baseline, manifest):
                 raise ValueError("Private source pointers belong in their private owner: reviewed document %s "
                                  "changed; re-review its source bindings and update the baseline digest" % path)
             continue
-        facts = surface_facts(text, public, private)
+        facts = surface_facts(text, public, private, qualified)
         found = facts["refs"] + facts["commits"]
         if found:
             raise ValueError("Private source pointers belong in their private owner: %s adds source binding %s"
