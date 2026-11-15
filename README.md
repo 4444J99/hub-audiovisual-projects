@@ -6,6 +6,8 @@ See the [functional identity rollout and validation](docs/functional-identity-ro
 
 Start with [the directory design](docs/directory-architecture.md), [the complete project catalog](docs/project-catalog.md), and [the migration report](docs/workspace-migration-report.md).
 
+The [audiovisual estate status map](docs/audiovisual-status-2026-11-14.md) lines up each public repository's head, local gates and next steps.
+
 The [TMB spatial composition report](docs/tmb-spatial-integration-report.md) records
 the verified integration, source identities and reproducible local preview.
 
