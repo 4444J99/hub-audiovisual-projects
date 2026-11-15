@@ -87,7 +87,9 @@ class IdentityContract(unittest.TestCase):
         plain = "Repository: time-moment-brief\nCommit: %s\nPath: assets/a.wav" % self.SHA
         for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md",
                      "projects/time-moment-brief/source-provenance.md", "artworks/a/notes.txt",
-                     "tools/source-provenance.md", ".github/source-provenance.md"):
+                     "tools/source-provenance.md", ".github/source-provenance.md",
+                     "docs/source-provenance.MD", "docs/source-provenance.rst", "docs/source-provenance.html",
+                     "docs/source-provenance", "docs/source-provenance.yaml"):
             for text in (named, bare, plain):
                 with self.assertRaisesRegex(ValueError, "private owner"):
                     self.surface({path: text})
@@ -120,7 +122,6 @@ class IdentityContract(unittest.TestCase):
                     "https://github.com/4444J99/the-thing-without-a-name.git",
                     "4444J99/audiovisual-media-postproduction-system/pull/59", "4444J99/simvltanea/pull/32"):
             self.surface({"docs/new-note.md": "See %s" % ref})
-        self.surface({"tools/x.py": "4444J99/anything %s private" % self.SHA})
 
     def test_tracked_files_contain_no_private_pointers(self):
         env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
@@ -131,7 +132,7 @@ class IdentityContract(unittest.TestCase):
         baseline = json.loads((TOOLS / "public_surface_baseline.json").read_text())["paths"]
         self.assertTrue(set(baseline) <= set(tracked))
         identity.validate_public_surface(
-            tracked, lambda p: (TOOLS.parent / p).read_text(errors="replace"), baseline, self.manifest)
+            tracked, lambda p: identity.read_text_or_none(TOOLS.parent / p), baseline, self.manifest)
 
     def test_private_registry_source_rejected(self):
         source = self.manifest["identity_registry"]["source_media"][0]

@@ -251,7 +251,6 @@ def validate_publication(manifest):
 
 
 PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
-SURFACE_SUFFIXES = (".md", ".json", ".txt", ".yml", ".yaml")
 OWNER_REF = re.compile(r"(?:github\.com[/:])?\b(?:4444J99|organvm)/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
 PUBLIC_COMMIT_URL = re.compile(r"github\.com/4444J99/([A-Za-z0-9._-]+)/commit/[0-9a-f]{7,40}")
 COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
@@ -264,8 +263,8 @@ SURFACE_FIXTURES = frozenset({"tools/identity_contract.py", "tools/tests/test_id
 
 
 def in_surface_scope(path):
-    """Every tracked text document, including tools/ and CI, except the exact reviewed fixtures."""
-    return path.endswith(SURFACE_SUFFIXES) and path not in SURFACE_FIXTURES
+    """Every tracked file of any extension or case, except the exact reviewed fixtures. Binary files are skipped by the reader."""
+    return path not in SURFACE_FIXTURES
 
 
 def _repository_names(repo, navigation=True):
@@ -328,6 +327,12 @@ def surface_facts(text, public, private=frozenset(), qualified=frozenset()):
     return {"refs": sorted(refs), "commits": commits}
 
 
+def read_text_or_none(path):
+    """Decode a tracked file for inspection; None for binary files (containing NUL)."""
+    data = path.read_bytes()
+    return None if b"\0" in data else data.decode("utf-8", "replace")
+
+
 def content_digest(text):
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
 
@@ -337,7 +342,7 @@ def validate_public_surface(paths, read, baseline, manifest):
 
     Manifest checks only see manifest relationships, so a document naming a private
     repository would bypass them. Pointers live in the private owner. Every in-scope
-    document is inspected by content under any filename. ``baseline`` maps the few
+    tracked file is inspected by content under any filename or extension. ``baseline`` maps the few
     documents that already carried reviewed source bindings to the SHA-256 of their
     reviewed content: any edit to such a document (new binding, new internal path)
     fails until the baseline entry is re-reviewed. All other documents may carry no
@@ -353,6 +358,8 @@ def validate_public_surface(paths, read, baseline, manifest):
         if not in_surface_scope(path):
             continue
         text = read(path)
+        if text is None:  # binary content has no readable source binding
+            continue
         if path in baseline:
             if content_digest(text) != baseline[path]:
                 raise ValueError("Private source pointers belong in their private owner: reviewed document %s "

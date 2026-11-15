@@ -1,6 +1,7 @@
 {
- "comment": "SHA-256 of each public document whose source bindings were reviewed before the content check. Any edit requires re-review and a new digest; documents not listed may carry no source bindings.",
+ "comment": "SHA-256 of each tracked file whose source bindings were reviewed before the content check. Any edit requires re-review and a new digest; files not listed may carry no source bindings.",
  "paths": {
+  ".gitignore": "800b89d99bfbf5b0c023c8a7f606a9ea632e18e6318e45372149236d7dfb0d70",
   "artworks/art-6ab7e2663fe881919dae29c328e14d72/README.md": "18cac9c2aaf1f0b4d89ca04a91693a809d64e359c2db202b52657bcca8e5891e",
   "docs/acceptance/custody-acceptance-2026-10-31.md": "6827e4727dac095d946d0b6b9c20f041fa666473d2093d90a38b330851eb6a47",
   "docs/acceptance/publication-acceptance-2026-10-31.md": "79439468fd9e1e5628a2f51cf085c0002343638e2d1be1861d5c6c39bc67cda5",
@@ -10,6 +11,7 @@
   "docs/directory-architecture.md": "ba7c0d8f8f5bed819c0c68be224ba29759ed91799d8f7f508b3620ff253d4094",
   "docs/evidence/2026-10-10-tmb-spatial-composition-v3/browser-acceptance.json": "8225e63e33c7ca046bda7c1e81fbb4f7c03e59feb578d48b24bf575f8620e2dc",
   "docs/evidence/2026-10-10-tmb-spatial-composition-v3/edition-receipt.json": "383f2cb8aa6fcd6d63c8f6aab5d8ff645a79188922bfae1eaf929e38696e86ee",
+  "docs/evidence/2026-10-10-tmb-spatial-composition-v3/historical-verifier.cjs": "a1771e11a43f4c824661f06685bf30c5ad31dd3fff3ee50326a3a18d9c656d30",
   "docs/evidence/2026-10-10-tmb-spatial-composition/browser-acceptance.json": "5a6e8e69ad0dd55473c122aa584229ae25dbb2acc8bf065f17cdc1c3791f5187",
   "docs/evidence/2026-10-10-tmb-spatial-composition/edition-receipt.json": "6c41ab26b70e5a80de053ae397917f5dad34c14a33c0efd6a07dae7f940838e7",
   "docs/evidence/ace-pr-evidence-recovery-2026-10-25.json": "21697172428d8ad29e782537bade1dd5ef79c0af523a2f9c4a2a936d06818da9",
@@ -46,6 +48,8 @@
   "projects/time-moment-brief/README.md": "84e1a806d629ffd1ea1309c669c3d1d2ce6ba131de681c8ce567baebcc86910e",
   "repositories/danse-source/README.md": "23c9bcb2748f37e714c205dfbc7796851eb39b7fa4d7ab2060b60d018f44f89e",
   "repositories/time-moment-brief/README.md": "352ae8df05dfa842698633ca20896e1d2fb31956b7c83e4c83ed0102f5640596",
+  "tools/verify_tmb_composition.cjs": "36f1dca0047318311a1d9e3d98e01d5a9f397e12fd291d1be0c84a6b15b7703f",
+  "tools/workspace_layout.py": "102cd4fb8857333f7fdcea540121fbd000fe25e084d9617f88afc2cd37bab19d",
   "workspace-manifest.json": "3f9344d307d6c7eea8d1e60e1a9fdfa61b1e7ba6181c3a2d9aeb95564c73f003"
  }
 }
