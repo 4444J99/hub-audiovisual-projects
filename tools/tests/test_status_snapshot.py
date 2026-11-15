@@ -597,6 +597,34 @@ class CollectTests(unittest.TestCase):
         with self.assertRaises(status.StatusError):
             status.render(snap, manifest())
 
+    def test_head_pull_request_missing_from_the_search_is_refused(self):
+        class Lag(FakeGh):
+            def __call__(self, *args):
+                out = super().__call__(*args)
+                if args[:2] == ("pr", "list") and "merged" in args:
+                    return []
+                return out
+        with self.assertRaises(status.StatusError):
+            status.collect_repo(Lag(), "o/r", "2026-11-13")
+
+    def test_marked_name_is_not_redacted_at_collection(self):
+        calls = {}
+        original = status.collect_repo
+        status.collect_repo = lambda gh, repo, since, restricted=(): calls.setdefault("r", set(restricted)) or {"full_name": repo}
+        self.addCleanup(setattr, status, "collect_repo", original)
+        status.collect_snapshot(manifest(), "2026-11-13", "2026-11-15", "a", gh=None, clock=lambda: "b")
+        self.assertNotIn("named-thing", calls["r"])
+        self.assertIn("hidden-thing", calls["r"])
+
+    def test_one_pass_redaction_does_not_garble_or_trip_the_gate(self):
+        text = status.redact("see hidden-thing and rest", {"hidden-thing", "rest", "repo"})
+        self.assertEqual(text, "see (restricted repository) and (restricted repository)")
+        m = manifest()
+        m["repositories"][1]["key"] = "rest"
+        status._gate_surface("see (restricted repository) here", m)  # the placeholder's own letters are not a leak
+        with self.assertRaises(status.StatusError):
+            status._gate_surface("the rest of it", m)
+
     def test_head_that_moves_during_collection_is_refused(self):
         with self.assertRaises(status.StatusError):
             status.collect_repo(FakeGh(head_moves=True), "o/r", "2026-11-13")
@@ -731,6 +759,13 @@ class CliTests(unittest.TestCase):
         self.assertEqual(page.read_text(encoding="utf-8"), "old page")
         self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["manifest.json", "p.md", "s.json", "snap.json"])
 
+    def test_rename_failure_removes_a_file_that_did_not_exist_before(self):
+        fresh, blocked = self.tmp / "new.md", self.tmp / "dir"
+        blocked.mkdir()
+        with self.assertRaises(OSError):
+            status.write_all([(fresh, "x"), (blocked, "y")])
+        self.assertFalse(fresh.exists())
+
     def test_check_needs_snapshot_and_out(self):
         self.assertEqual(self.cli("--check", "--since", "2026-11-13")[0], 2)
         self.assertEqual(self.cli("--check", "--from-snapshot", str(self.tmp / "snap.json"))[0], 2)
@@ -742,7 +777,8 @@ class CliTests(unittest.TestCase):
 
     def test_live_dates_are_validated_before_any_network_call(self):
         out, snap = str(self.tmp / "p.md"), str(self.tmp / "s.json")
-        for since, date in (("2026-11-13", "2026-11-10"), ("2026-13-45", "2026-11-15"), ("2026-11-13", "2026-02-30")):
+        for since, date in (("2026-11-13", "2026-11-10"), ("2026-13-45", "2026-11-15"), ("2026-11-13", "2026-02-30"),
+                            ("2026-11-13", "2999-01-01")):
             code, _, err = self.cli("--since", since, "--date", date, "--out", out, "--snapshot-out", snap)
             self.assertEqual(code, 2, (since, date))
 

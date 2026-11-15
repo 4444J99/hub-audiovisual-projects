@@ -386,6 +386,7 @@ def validate_public_surface(paths, read, baseline, manifest):
     that snapshot may name a repository whose manifest record carries
     status_listing "name-only", and then only its bare name.
     """
+    paths = list(paths)
     bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
     if bad:
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
@@ -393,7 +394,6 @@ def validate_public_surface(paths, read, baseline, manifest):
     strict = (private_repository_names(manifest), private_qualified_origins(manifest))
     listed_sets = (private_repository_names(manifest, allow_listed=True),
                    private_qualified_origins(manifest, allow_listed=True))
-    paths = list(paths)
     path_set = set(paths)
     for path in paths:
         if not in_surface_scope(path):

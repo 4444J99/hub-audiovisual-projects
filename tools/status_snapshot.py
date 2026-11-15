@@ -46,6 +46,7 @@ SCHEMA = 1
 HUB = "4444J99/hub-audiovisual-projects"
 SHA_LEN = 12
 SHOW_LEN = 7
+PLACEHOLDER = "(restricted repository)"
 SUBSTRING_MIN = 4  # restricted names at least this long are matched even inside longer tokens
 HEX = re.compile(r"[0-9a-f]+")
 NAME = re.compile(r"[A-Za-z0-9_.-]+")
@@ -180,9 +181,11 @@ def collect_repo(gh, repo, since, restricted=()):
     head = gh("api", "repos/%s/commits/%s" % (repo, branch))
     head_sha = head["sha"]
     head_pr = None
+    head_pr_merged = None
     for pull in gh("api", "repos/%s/commits/%s/pulls" % (repo, head_sha)) or []:
         if pull.get("merged_at") and pull.get("merge_commit_sha") == head_sha:
             head_pr = pull["number"]
+            head_pr_merged = pull["merged_at"]
 
     merged_raw = gh("pr", "list", "-R", repo, "--state", "merged", "--search", "merged:>=%s" % since,
                     "--limit", str(LIST_LIMIT), "--json", "number,title,mergedAt,mergeCommit,headRefOid,baseRefName")
@@ -202,6 +205,9 @@ def collect_repo(gh, repo, since, restricted=()):
                        "merge_sha": short(merge_sha), "head_sha": short(pr["headRefOid"]), "resolved": True})
         red.extend(_red_at_merge(gh, repo, pr, restricted))
 
+    if head_pr is not None and head_pr_merged[:10] >= since and head_pr not in {p["number"] for p in merged_raw}:
+        raise StatusError("%s: the head's pull request #%d is missing from the merged-PR search (index lag); run again shortly"
+                          % (repo, head_pr))
     open_raw = gh("pr", "list", "-R", repo, "--state", "open", "--limit", str(LIST_LIMIT),
                   "--json", "number,title,isDraft,headRefOid,updatedAt,baseRefName")
     if len(open_raw) >= LIST_LIMIT:
@@ -297,10 +303,12 @@ def _red_at_merge(gh, repo, pr, restricted):
 def redact(text, restricted):
     """Replace restricted repository names in free text so they never enter a snapshot."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)), " ".join(str(text).split()))
-    for name in sorted(restricted, key=len, reverse=True):
-        pattern = re.escape(name) if len(name) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(name)
-        text = re.sub(pattern, "(restricted repository)", text, flags=re.IGNORECASE)
-    return text
+    parts = [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
+             for n in sorted(restricted, key=len, reverse=True)]
+    if not parts:
+        return text
+    # One pass over alternatives, so a replacement is never re-matched by a later name.
+    return re.sub("|".join(parts), PLACEHOLDER, text, flags=re.IGNORECASE)
 
 
 def utc_now():
@@ -309,8 +317,8 @@ def utc_now():
 
 def collect_snapshot(manifest, since, date, started_at, gh=gh_json, clock=utc_now):
     full, name_only, omitted = tracked_repositories(manifest)
-    restricted = identity_contract.private_repository_names(manifest) | set(
-        identity_contract.private_qualified_origins(manifest))
+    restricted = identity_contract.private_repository_names(manifest, allow_listed=True) | set(
+        identity_contract.private_qualified_origins(manifest, allow_listed=True))
     repositories = [collect_repo(gh, repo, since, restricted) for repo in full]
     return {"schema": SCHEMA, "date": date, "since": since, "started_at": started_at, "captured_at": clock(),
             "repositories": repositories, "name_only": [n.split("/", 1)[1] for n in name_only],
@@ -547,7 +555,7 @@ def _restricted_substrings(manifest):
 
 
 def _gate_surface(page, manifest):
-    lowered = page.lower().replace("\\", "")
+    lowered = page.replace(PLACEHOLDER, "").lower().replace("\\", "")
     for name in sorted(_restricted_substrings(manifest)):
         if name in lowered:
             raise StatusError("generated page contains a restricted repository name: %s" % name)
@@ -569,7 +577,7 @@ def write_all(files):
     """Write every (path, text) beside its target first, then rename them all; if a rename fails, put back what
     each target held before, so a failed run leaves neither a partial pair nor an orphaned page."""
     staged = [(path.with_name(path.name + ".tmp"), path, text) for path, text in files]
-    before = {path: (path.read_bytes() if path.exists() else None) for _, path, _ in staged}
+    before = {path: (path.read_bytes() if path.is_file() else None) for _, path, _ in staged}
     done = []
     try:
         for tmp, _, text in staged:
@@ -621,6 +629,8 @@ def main(argv=None):
                 raise StatusError("--since YYYY-MM-DD (a real date) is required in live mode")
             now = datetime.datetime.now(datetime.timezone.utc)
             date = args.date or now.strftime("%Y-%m-%d")
+            if date != now.strftime("%Y-%m-%d"):
+                raise StatusError("--date must be the capture day (today, UTC): the page describes the state read now")
             if not real_date(date) or args.since > date:
                 raise StatusError("--date must be a real YYYY-MM-DD date on or after --since")
             snap = collect_snapshot(manifest, args.since, date, now.strftime("%Y-%m-%dT%H:%M:%SZ"))
