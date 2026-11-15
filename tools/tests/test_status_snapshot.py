@@ -217,7 +217,7 @@ class NameOnlyTests(unittest.TestCase):
         m = manifest()
         both = ["docs/status/a.md", "docs/status/a.snapshot.json"]
         for text in ("see named-thing/src/internal.py", "see 4444J" "99/named-thing", "see x/named-thing here",
-                     "path named-thing\\src"):
+                     "path named-thing\\src", "named-thing:src/x.py", "named-thing@abc", "pin " + "a" * 40):
             with self.subTest(text=text):
                 files = {both[0]: identity.GENERATED_STATUS_MARKER + " -->\n" + text, both[1]: "{}"}
                 with self.assertRaises(ValueError):
@@ -809,6 +809,36 @@ class CliTests(unittest.TestCase):
                             ("2026-11-13", "2999-01-01")):
             code, _, err = self.cli("--since", since, "--date", date, "--out", out, "--snapshot-out", snap)
             self.assertEqual(code, 2, (since, date))
+
+    def test_live_mode_without_both_outputs_is_refused(self):
+        self.fake_collect(snapshot())
+        self.assertEqual(self.cli("--since", "2026-11-13")[0], 2)
+
+    def test_transient_gh_failures_are_retried_but_rate_limits_are_not(self):
+        calls = []
+
+        class Done:
+            def __init__(self, code, out="", err=""):
+                self.returncode, self.stdout, self.stderr = code, out, err
+        results = [Done(1, err="Post x: unexpected EOF"), Done(0, out='{"a": 1}')]
+        original_run, original_sleep = status.subprocess.run, status.time.sleep
+        status.subprocess.run = lambda *a, **k: calls.append(1) or results.pop(0)
+        status.time.sleep = lambda s: None
+        self.addCleanup(setattr, status.subprocess, "run", original_run)
+        self.addCleanup(setattr, status.time, "sleep", original_sleep)
+        self.assertEqual(status.gh_json("api", "x"), {"a": 1})
+        self.assertEqual(len(calls), 2)
+        calls.clear()
+        results[:] = [Done(1, err="HTTP 403: API rate limit exceeded"), Done(0, out="{}")]
+        with self.assertRaises(status.StatusError):
+            status.gh_json("api", "x")
+        self.assertEqual(len(calls), 1)
+
+    def test_titles_cannot_become_live_links(self):
+        cleaned = status.clean("see https://example.invalid/x and www.example.invalid")
+        self.assertNotIn("://", cleaned)
+        self.assertNotIn("www.", cleaned)
+        self.assertIn("https:&#47;&#47;example.invalid/x", cleaned)
 
     def test_live_mode_requires_since(self):
         self.assertEqual(self.cli()[0], 2)

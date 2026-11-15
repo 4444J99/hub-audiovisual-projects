@@ -323,7 +323,8 @@ def listed_name_paths(text, manifest):
     for repo in manifest["repositories"]:
         if name_listed(repo):
             name = re.escape(repo["full_name"].split("/", 1)[1].lower())
-            if re.search(r"(?<![a-z0-9_.-])%s\s*[/\\]|[/\\]\s*%s(?![a-z0-9_-])" % (name, name), lowered):
+            if (re.search(r"(?<![a-z0-9_.-])%s\s*[/\\]|[/\\:@]\s*%s(?![a-z0-9_-])" % (name, name), lowered)
+                    or re.search(r"(?<![a-z0-9_.-])%s[:@#]\S" % name, lowered)):
                 found.append(repo["full_name"].split("/", 1)[1])
     return found
 
@@ -426,7 +427,9 @@ def validate_public_surface(paths, read, baseline, manifest):
                                  "changed; re-review its source bindings and update the baseline digest" % path)
             continue
         facts = surface_facts(text, public, private, qualified)
-        found = facts["refs"] + facts["commits"] + (listed_name_paths(text, manifest) if listed else [])
+        found = facts["refs"] + facts["commits"]
+        if listed:
+            found += listed_name_paths(text, manifest) + COMMIT.findall(text.lower())
         if found:
             raise ValueError("Private source pointers belong in their private owner: %s adds source binding %s"
                              % (path, found[0]))

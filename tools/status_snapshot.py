@@ -35,6 +35,7 @@ import datetime
 import json
 import re
 import subprocess
+import time
 import urllib.parse
 import sys
 from pathlib import Path
@@ -72,12 +73,28 @@ class NotFound(StatusError):
 # --------------------------------------------------------------------------- gh
 
 
+TRANSIENT = re.compile(r"unexpected EOF|connection reset|timed? ?out|TLS handshake|\bHTTP 50[0-4]\b|temporarily unavailable",
+                       re.IGNORECASE)
+RETRIES = 2
+
+
 def gh_json(*args):
-    """Run ``gh`` and parse its JSON output; any failure is a StatusError."""
-    try:
-        done = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=120, check=False)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise StatusError("gh could not run: %s" % exc) from exc
+    """Run ``gh`` and parse its JSON output; any failure is a StatusError. A transient network or 5xx failure is
+    retried (a rate limit or any 4xx is not)."""
+    for attempt in range(RETRIES + 1):
+        try:
+            done = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=120, check=False)
+        except subprocess.TimeoutExpired as exc:
+            if attempt < RETRIES:
+                time.sleep(2 * (attempt + 1))
+                continue
+            raise StatusError("gh timed out: %s" % exc) from exc
+        except OSError as exc:
+            raise StatusError("gh could not run: %s" % exc) from exc
+        if done.returncode != 0 and TRANSIENT.search(done.stderr) and attempt < RETRIES:
+            time.sleep(2 * (attempt + 1))
+            continue
+        break
     if done.returncode != 0:
         kind = NotFound if re.search(r"\bHTTP 404\b", done.stderr) else StatusError
         raise kind("gh %s failed: %s" % (" ".join(args[:3]), done.stderr.strip()[:300]))
@@ -108,7 +125,8 @@ SYNTHETIC_STEPS = ("Set up job", "Complete job", "Initialize containers", "Stop 
 
 def count_executed(steps):
     """Steps of the workflow itself that ran: completed with a conclusion other than skipped. GitHub's own
-    'Set up job', 'Complete job', container and 'Post Run ...' bookkeeping steps do not count, so a job whose every real step
+    'Set up job', 'Complete job', container and 'Post Run ...' bookkeeping steps do not count (the post-step of a
+    named step, 'Post <step name>', cannot be told from a user step and does count, but exists only when its main step ran), so a job whose every real step
     was skipped, or that died before its first step, has zero."""
     return sum(1 for s in steps or []
                if s.get("status") == "completed" and s.get("conclusion") in EXECUTED
@@ -402,7 +420,9 @@ def clean(text):
     text = FULL_PIN.sub(lambda m: m.group(0)[:SHOW_LEN], " ".join(str(text).split()))
     for ch in "\\|`[]*_#~":
         text = text.replace(ch, "\\" + ch)
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("@", "&#64;")
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("@", "&#64;")
+    # Keep titles from becoming live links (GFM autolinks): break the scheme separator and www prefix.
+    return re.sub(r"(?i)\bwww\.", "www&#46;", text.replace("://", ":&#47;&#47;"))
 
 
 def _url(repo, kind, number):
@@ -621,7 +641,7 @@ def main(argv=None):
     try:
         if args.check and not (args.from_snapshot and args.out):
             raise StatusError("--check needs --from-snapshot and --out")
-        if not args.from_snapshot and bool(args.out) != bool(args.snapshot_out):
+        if not args.from_snapshot and not (args.out and args.snapshot_out):
             raise StatusError("live mode writes a page and its snapshot together: give both --out and --snapshot-out")
         if args.from_snapshot and args.snapshot_out:
             raise StatusError("--snapshot-out applies to live mode only")
