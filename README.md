@@ -10,6 +10,8 @@ Start with [the directory design](docs/directory-architecture.md), [the complete
 
 The [audiovisual estate status map](docs/audiovisual-status-2026-11-14.md) lines up each public repository's head, local gates and next steps.
 
+Status pages from 2026-11-15 on are generated from live GitHub state by `tools/status_snapshot.py`, not hand-written: see [status generation](docs/status-generation.md) and the [2026-11-15 generated page](docs/status/2026-11-15.md).
+
 The [TMB spatial composition report](docs/tmb-spatial-integration-report.md) records
 the verified integration, source identities and reproducible local preview.
 

@@ -290,10 +290,15 @@ def public_repository_names(manifest):
     return names
 
 
+def name_listed(repo):
+    """A restricted repository whose manifest record deliberately marks its bare name public-safe for generated status pages."""
+    return repo["private"] and repo.get("status_listing") == "name-only"
+
+
 def private_repository_names(manifest):
     names = set()
     for repo in manifest["repositories"]:
-        if repo["private"]:
+        if repo["private"] and not name_listed(repo):
             names |= _repository_names(repo, navigation=False)
     return names - public_repository_names(manifest)
 
@@ -302,7 +307,7 @@ def private_qualified_origins(manifest):
     """Owner-qualified private identities, which stay private even when a public remote shares the basename."""
     found = set()
     for repo in manifest["repositories"]:
-        if repo["private"]:
+        if repo["private"] and not name_listed(repo):
             found.add(repo["full_name"])
             origin = repo.get("configured_origin")
             if origin:
