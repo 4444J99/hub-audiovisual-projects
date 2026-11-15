@@ -68,19 +68,39 @@ class IdentityContract(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "frozen published baseline"):
             identity.validate_manifest(self.manifest)
 
+    def surface(self, files, baseline=()):
+        identity.validate_public_surface(list(files), files.__getitem__, baseline, self.manifest)
+
     def test_private_pointer_files_rejected(self):
         # Regression for closed PR 32: a hand-authored pointer to a private repository
         # bypassed the manifest-only publication checks (AGENTS.md forbids private bindings).
         for path in ("docs/private-pointers/study.md", "docs/private_pointer-x.md", "notes/Private-Pointers/a.md"):
             with self.assertRaisesRegex(ValueError, "private owner"):
-                identity.validate_public_surface(["README.md", path])
-        identity.validate_public_surface(["docs/danse-private-custody.md", "docs/project-catalog.md"])
+                self.surface({"README.md": "", path: ""})
+
+    def test_pointer_under_any_filename_rejected_by_content(self):
+        sha = "0123456789abcdef0123456789abcdef01234567"
+        named = "Private repository 4444J99/some-private-study, commit %s, assets/a.wav." % sha
+        bare = "Source lives in a private repository; pinned commit %s." % sha
+        for path in ("docs/source-provenance.md", "docs/private-source-pointer.md", "manifests/x.json", "NOTES.md"):
+            for text in (named, bare):
+                with self.assertRaisesRegex(ValueError, "private owner"):
+                    self.surface({path: text})
+
+    def test_public_references_and_baseline_documents_allowed(self):
+        sha = "0123456789abcdef0123456789abcdef01234567"
+        self.surface({"docs/new-note.md": "See 4444J99/tool-audiovisual-postproduction and 4444J99/hub-audiovisual-projects."})
+        self.surface({"docs/legacy.md": "private repository 4444J99/old-owner at %s" % sha}, baseline=["docs/legacy.md"])
+        self.surface({"tools/x.py": "4444J99/anything %s private" % sha})
 
     def test_tracked_files_contain_no_private_pointers(self):
         tracked = subprocess.run(["git", "ls-files"], cwd=TOOLS.parent, check=True,
                                  capture_output=True, text=True).stdout.splitlines()
         self.assertTrue(tracked)
-        identity.validate_public_surface(tracked)
+        baseline = json.loads((TOOLS / "public_surface_baseline.json").read_text())["paths"]
+        self.assertTrue(set(baseline) <= set(tracked))
+        identity.validate_public_surface(
+            tracked, lambda p: (TOOLS.parent / p).read_text(errors="replace"), baseline, self.manifest)
 
     def test_private_registry_source_rejected(self):
         source = self.manifest["identity_registry"]["source_media"][0]

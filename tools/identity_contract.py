@@ -251,17 +251,41 @@ def validate_publication(manifest):
 
 
 PRIVATE_POINTER_PATH = re.compile(r"(?:^|/)private[-_]?pointers?(?:[-_./]|\Z)", re.IGNORECASE)
+SURFACE_SUFFIXES = (".md", ".json", ".txt", ".yml", ".yaml")
+OWNER_REF = re.compile(r"(?:github\.com[/:])?\b4444J99/([A-Za-z0-9._-]+?)(?:\.git)?(?![A-Za-z0-9_-])")
+COMMIT = re.compile(r"\b[0-9a-f]{40}\b")
+PUBLIC_SELF = {"audiovisual-composition-system", "hub-audiovisual-projects"}
 
 
-def validate_public_surface(paths):
-    """Reject hand-authored private-source pointer files in this public repository.
+def in_surface_scope(path):
+    return path.endswith(SURFACE_SUFFIXES) and (path.startswith(("docs/", "manifests/")) or "/" not in path)
 
-    Manifest checks only see manifest relationships, so a Markdown pointer to a
-    private repository would bypass them. Private owners hold such pointers.
+
+def validate_public_surface(paths, read, baseline, manifest):
+    """Reject hand-authored private-source pointers in this public repository.
+
+    Manifest checks only see manifest relationships, so a document naming a private
+    repository would bypass them. Pointers live in the private owner. Files outside
+    the reviewed baseline are inspected by content, under any filename.
     """
     bad = sorted(p for p in paths if PRIVATE_POINTER_PATH.search(p))
     if bad:
         raise ValueError("Private source pointers belong in their private owner: " + ", ".join(bad))
+    public = set(PUBLIC_SELF)
+    for repo in manifest["repositories"]:
+        if not repo["private"]:
+            public.add(repo["full_name"].split("/", 1)[1])
+    baseline = set(baseline)
+    for path in paths:
+        if path in baseline or not in_surface_scope(path):
+            continue
+        text = read(path)
+        outside = sorted({m for m in OWNER_REF.findall(text)} - public)
+        if outside:
+            raise ValueError("Private source pointers belong in their private owner: %s names repository %s"
+                             % (path, outside[0]))
+        if COMMIT.search(text) and re.search(r"private", text, re.IGNORECASE):
+            raise ValueError("Private source pointers belong in their private owner: %s pairs a commit pin with a private source" % path)
 
 
 def validate_manifest(manifest):
