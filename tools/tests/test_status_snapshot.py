@@ -675,6 +675,16 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(identity.listed_name_paths(text, manifest()), [])
         self.assertEqual(status.redact("see named-thing, ok", set(), {"named-thing"}), "see named-thing, ok")
 
+    def test_prose_colon_or_at_before_a_marked_name_is_not_over_redacted(self):
+        self.assertEqual(status.redact("fix: named-thing and cc @ named-thing", set(), {"named-thing"}),
+                         "fix: named-thing and cc @ named-thing")
+        self.assertEqual(status.redact("see a:named-thing and @named-thing", set(), {"named-thing"}),
+                         "see a%s and %s" % (status.PLACEHOLDER, status.PLACEHOLDER))
+
+    def test_marked_name_with_a_dotted_suffix_is_redacted_but_bare_and_sentence_end_survive(self):
+        text = status.redact("clone named-thing.git, named-thing.x and named-thing. Done; also named-thing", set(), {"named-thing"})
+        self.assertEqual(text, "clone %s, %s and named-thing. Done; also named-thing" % (status.PLACEHOLDER, status.PLACEHOLDER))
+
     def test_uppercase_pins_are_shortened(self):
         self.assertEqual(status.redact("Revert " + "AB" * 20, set()), "Revert " + "ab" * 6)
 
@@ -700,11 +710,15 @@ class CollectTests(unittest.TestCase):
             return {"full_name": repo}
         status.collect_repo = flaky
         self.addCleanup(setattr, status, "collect_repo", original)
-        self.assertEqual(status.collect_repo_retrying(None, "o/r", "d", set(), set()), {"full_name": "o/r"})
+        pauses = []
+        self.assertEqual(status.collect_repo_retrying(None, "o/r", "d", set(), set(), sleep=pauses.append), {"full_name": "o/r"})
+        self.assertEqual(pauses, [status.HEAD_BACKOFF, 2 * status.HEAD_BACKOFF], "a growing pause between re-reads")
         attempts.clear()
         status.collect_repo = lambda *a, **k: (_ for _ in ()).throw(status.HeadMoved("always"))
+        pauses.clear()
         with self.assertRaises(status.HeadMoved):
-            status.collect_repo_retrying(None, "o/r", "d", set(), set())
+            status.collect_repo_retrying(None, "o/r", "d", set(), set(), sleep=pauses.append)
+        self.assertEqual(len(pauses), status.HEAD_ATTEMPTS - 1, "no pause after the final attempt")
 
     def test_header_fields_are_validated(self):
         for change in ({"captured_at": "<script>x</script>"}, {"started_at": "2026-11-15T17:00:00Z"},
