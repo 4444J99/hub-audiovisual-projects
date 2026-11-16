@@ -83,6 +83,7 @@ TRANSIENT = re.compile(r"unexpected EOF|connection reset|timed? ?out|TLS handsha
                        re.IGNORECASE)
 RETRIES = 2
 HEAD_ATTEMPTS = 3
+HEAD_BACKOFF = 1
 
 
 def gh_json(*args):
@@ -354,12 +355,14 @@ def _red_at_merge(gh, repo, pr, restricted, marked):
 def redact(text, restricted, marked=()):
     """Replace restricted repository names in free text so they never enter a snapshot. A name-only repository
     keeps its bare name, but a path, owner-qualified or tagged use of it (``name/x``, ``a/name``, ``name:x``,
-    ``name@x``, ``name#1``) is replaced, since the exemption covers the bare name only."""
+    ``name@x``, ``name#1``, ``name.git``) is replaced, since the exemption covers the bare name only."""
     text = FULL_PIN.sub(lambda m: short(m.group(0)).lower(), " ".join(str(text).split()))
     parts = []
     for name in sorted(marked, key=len, reverse=True):
         n = re.escape(name)
-        parts.append(r"[/\\:@]\s*%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]|(?<![a-z0-9_.-])%s[:@#](?=\S)" % (n, n, n))
+        # A ``:`` or ``@`` prefix counts only when it hugs the name (``a:name``, ``@name``), not prose (``fix: name``).
+        parts.append(r"[/\\]\s*%s(?![a-z0-9_-])|[:@]%s(?![a-z0-9_-])|(?<![a-z0-9_.-])%s\s*[/\\]"
+                     r"|(?<![a-z0-9_.-])%s[:@#](?=\S)|(?<![a-z0-9_.-])%s\.\w+" % (n, n, n, n, n))
     parts += [re.escape(n) if len(n) >= SUBSTRING_MIN else r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(n)
               for n in sorted(restricted, key=len, reverse=True)]
     if not parts:
@@ -368,14 +371,16 @@ def redact(text, restricted, marked=()):
     return re.sub("|".join(parts), PLACEHOLDER, text, flags=re.IGNORECASE)
 
 
-def collect_repo_retrying(gh, repo, since, restricted, marked):
-    """A repository that merges while it is being read is read again (a few times) rather than failing the run."""
+def collect_repo_retrying(gh, repo, since, restricted, marked, sleep=time.sleep):
+    """A repository that merges while it is being read is read again (a few times, after a short growing pause)
+    rather than failing the run."""
     for attempt in range(HEAD_ATTEMPTS):
         try:
             return collect_repo(gh, repo, since, restricted, marked)
         except HeadMoved:
             if attempt == HEAD_ATTEMPTS - 1:
                 raise
+            sleep(HEAD_BACKOFF * (attempt + 1))
 
 
 def utc_now():
