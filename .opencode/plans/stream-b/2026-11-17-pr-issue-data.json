@@ -1,0 +1,22 @@
+{
+ "repo": "audiovisual-composition-system",
+ "slug": "4444J99/hub-audiovisual-projects",
+ "archived_upstream": false,
+ "prs": {
+  "prs_total": 41,
+  "prs_merged": 36,
+  "prs_open": 0,
+  "prs_closed_unmerged": 5
+ },
+ "closed_classes": {
+  "abandoned": 5
+ },
+ "supersession_links": [],
+ "open_pr_actions": [],
+ "issues": {
+  "total": 6,
+  "open": 2,
+  "stale": 0
+ },
+ "generated": "2026-11-17"
+}
