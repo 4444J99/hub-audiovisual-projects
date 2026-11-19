@@ -6,7 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const {silentLaunch, silentLaunchPersistentContext, silentArgs, INIT_SCRIPT_PATH, initScript} = require('../silent_browser.cjs');
+const {silentLaunch, silentLaunchPersistentContext, silentArgs, INIT_SCRIPT_PATH, initScript, hasClosedDeclarativeShadowRoot} = require('../silent_browser.cjs');
 
 function dependency(name) {
   try { return require(name); }
@@ -32,7 +32,8 @@ const page = 'data:text/html;base64,' + Buffer.from(`<!doctype html><meta charse
 function fakeEngine(name) {
   const scripts = [];
   const contexts = [];
-  const context = () => { const c = {addInitScript: async options => { scripts.push(options.path); }, closed: false, close: async () => { c.closed = true; }, newPage: async () => ({close: async () => {}}),
+  const context = () => { const c = {addInitScript: async options => { scripts.push(options.path); }, closed: false, close: async () => { c.closed = true; },
+    newPage: async () => { const page = {close: async () => {}, setContent: async html => { page.content = html; }, goto: async url => { page.url = url; } }; return page; },
     evaluated: [], pages: () => [{evaluate: async script => { c.evaluated.push(script); }}]}; contexts.push(c); return c; };
   return {scripts, contexts, launched: null, name: () => name,
     async launch(options) { this.launched = options; return {newContext: async () => context(), newPage: async () => { throw new Error('original newPage must not run'); }}; },
@@ -50,6 +51,80 @@ test('chromium gets --mute-audio merged with the caller arguments, once', async 
 test('webkit and firefox have no flag and rely on the init script', async () => {
   assert.deepEqual(silentArgs('webkit', ['--x']), ['--x']);
   assert.deepEqual(silentArgs('firefox'), []);
+});
+
+test('firefox gets media.volume_scale=0.0 passed through firefox_user_prefs, and the pref wins over the caller', async () => {
+  const engine = fakeEngine('firefox');
+  await silentLaunch(engine, {headless: true, firefoxUserPrefs: {'browser.tabs.remote.autostart': true, 'media.volume_scale': 1.0}});
+  assert.deepEqual(engine.launched.firefoxUserPrefs, {'browser.tabs.remote.autostart': true, 'media.volume_scale': 0.0});
+  const plain = fakeEngine('firefox');
+  await silentLaunch(plain, {});
+  assert.deepEqual(plain.launched.firefoxUserPrefs, {'media.volume_scale': 0.0});
+  const persistent = fakeEngine('firefox');
+  await silentLaunchPersistentContext(persistent, '/profile', {firefoxUserPrefs: {'media.volume_scale': 0.5}});
+  assert.deepEqual(persistent.launched.firefoxUserPrefs, {'media.volume_scale': 0.0});
+  const webkit = fakeEngine('webkit');
+  await silentLaunch(webkit, {firefoxUserPrefs: {'media.volume_scale': 1.0}});
+  assert.equal(webkit.launched.firefoxUserPrefs, undefined, 'the firefox pref is not passed to other engines');
+});
+
+const CLOSED_DSR = '<div><template shadowrootmode="closed"><audio id="sealed" src="a.wav"></audio></template></div>';
+const OPEN_DSR = '<div><template shadowrootmode="open"><audio id="sealed" src="a.wav"></audio></template></div>';
+
+test('hasClosedDeclarativeShadowRoot sees every spelling of the marker and nothing else', () => {
+  for (const html of [
+    '<template shadowrootmode="closed">', '<template  shadowrootmode = "closed" >',
+    "<template shadowrootmode='closed'>", '<template shadowrootmode=closed>',
+    '<TEMPLATE SHADOWROOTMODE="CLOSED">', '<template data-x="1" shadowrootmode="closed">',
+  ]) assert.equal(hasClosedDeclarativeShadowRoot(html), true, html);
+  for (const html of [
+    '<template shadowrootmode="open">', '<template shadowrootmode="closedness">',
+    '<template>', 'no template here',
+  ]) assert.equal(hasClosedDeclarativeShadowRoot(html), false, html);
+  assert.equal(hasClosedDeclarativeShadowRoot(undefined), false);
+});
+
+test('webkit refuses a page whose HTML contains a closed declarative shadow root, on every HTML-string path', async () => {
+  const engine = fakeEngine('webkit');
+  const browser = await silentLaunch(engine, {});
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await assert.rejects(page.setContent(CLOSED_DSR), /closed declarative shadow root/);
+  await page.setContent(OPEN_DSR);
+  assert.equal(page.content, OPEN_DSR, 'open shadow roots are allowed');
+  await assert.rejects(page.goto('data:text/html;base64,' + Buffer.from(CLOSED_DSR).toString('base64')), /closed declarative shadow root/);
+  await assert.rejects(page.goto('data:text/html,' + encodeURIComponent(CLOSED_DSR)), /closed declarative shadow root/);
+  await page.goto('data:text/html;base64,' + Buffer.from(OPEN_DSR).toString('base64'));
+  assert.equal(page.url.startsWith('data:text/html'), true);
+  await page.goto('http://127.0.0.1:1/served-elsewhere.html');
+  assert.equal(page.url, 'http://127.0.0.1:1/served-elsewhere.html', 'an http URL cannot be scanned and is not refused here (documented limit)');
+});
+
+test('chromium and firefox are engine-muted, so a closed declarative shadow root is allowed through', async () => {
+  for (const name of ['chromium', 'firefox']) {
+    const engine = fakeEngine(name);
+    const browser = await silentLaunch(engine, {});
+    const page = await (await browser.newContext()).newPage();
+    await page.setContent(CLOSED_DSR);
+    assert.equal(page.content, CLOSED_DSR, name);
+  }
+});
+
+test('webkit refuses through the helper newPage path and the persistent context first page', async () => {
+  const engine = fakeEngine('webkit');
+  const browser = await silentLaunch(engine, {});
+  const page = await browser.newPage();
+  await assert.rejects(page.setContent(CLOSED_DSR), /closed declarative shadow root/);
+  await page.close();
+  const persistent = fakeEngine('webkit');
+  persistent.pages = [{evaluate: async () => {}, setContent: async html => { persistent.written = html; }, goto: async () => {}}];
+  persistent.launchPersistentContext = async (dir, options) => {
+    persistent.launched = {dir, ...options};
+    const c = {addInitScript: async () => {}, pages: () => persistent.pages};
+    return c;
+  };
+  const context = await silentLaunchPersistentContext(persistent, '/profile', {});
+  await assert.rejects(context.pages()[0].setContent(CLOSED_DSR), /closed declarative shadow root/);
 });
 
 test('every context, page and persistent context gets the init script', async () => {

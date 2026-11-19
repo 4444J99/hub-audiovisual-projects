@@ -17,6 +17,26 @@ EXEMPT = {'tools/silent_browser.cjs', 'tools/tests/test_silent_browser.cjs',
           'tools/tests/test_silent_browser_lint.py'}
 # Historical receipts are preserved byte for byte and never run (the accepted receipt pins the verifier digest).
 HISTORICAL = 'docs/evidence/2026-10-10-tmb-spatial-composition-v3/historical-verifier.cjs'
+# The closed-root tripwire: no committed check page or fixture may carry a closed declarative shadow root, because on
+# WebKit its media cannot be silenced (the helper cannot reach it and WebKit has no engine-level switch).
+CLOSED_DSR = re.compile(r'shadowrootmode\s*=\s*["\']?\s*closed\b', re.I)
+CLOSED_DSR_SUFFIXES = {'.py', '.js', '.mjs', '.cjs', '.html', '.htm', '.ts', '.tsx'}
+CLOSED_DSR_EXEMPT = {'tools/silent-init.js', 'tools/silent_browser.cjs',
+                     'tools/tests/test_silent_browser.cjs', 'tools/tests/test_silent_browser_lint.py'}
+CLOSED_DSR_SKIP_PREFIXES = ('docs/', 'temporary-work-preservation-2026-10-10/', 'archives/')
+def closed_dsr_offenders():
+    offenders = []
+    for path, relative in files(CLOSED_DSR_SUFFIXES):
+        if relative in CLOSED_DSR_EXEMPT or relative.startswith(CLOSED_DSR_SKIP_PREFIXES):
+            continue
+        try:
+            source = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        if CLOSED_DSR.search(source):
+            offenders.append(relative)
+    return offenders
+
 def files(suffixes):
     for path in sorted(ROOT.rglob('*')):
         parts = set(path.relative_to(ROOT).parts)
@@ -195,6 +215,17 @@ class SilentLaunchLintTests(unittest.TestCase):
         self.assertEqual(node_launches('browser = await silentLaunch(webkit, {headless:true});\n'), [])
         self.assertEqual(node_launches('await player.launch(id);\n'), [])
         self.assertEqual(node_launches('// webkit.launch({headless:true})\n'), [])
+
+    def test_no_committed_file_carries_a_closed_declarative_shadow_root(self):
+        self.assertEqual(closed_dsr_offenders(), [],
+                         'a closed declarative shadow root cannot be silenced on WebKit; use an open root or run the check on Chromium or Firefox')
+
+    def test_the_closed_root_tripwire_sees_the_marker(self):
+        self.assertTrue(CLOSED_DSR.search('<template shadowrootmode="closed">'))
+        self.assertTrue(CLOSED_DSR.search('<template shadowrootmode = \'closed\'>'))
+        self.assertTrue(CLOSED_DSR.search('<template shadowrootmode=closed>'))
+        self.assertFalse(CLOSED_DSR.search('<template shadowrootmode="open">'))
+        self.assertFalse(CLOSED_DSR.search('<template shadowrootmode="closedness">'))
 
     def test_the_helper_is_the_only_launcher_and_history_is_the_only_exemption(self):
         helper = (ROOT / 'tools/silent_browser.cjs').read_text(encoding='utf-8')
