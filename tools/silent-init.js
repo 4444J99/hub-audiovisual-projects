@@ -11,7 +11,11 @@
  *  - speechSynthesis utterances are spoken at volume 0, and an utterance whose text carries markup (SSML) is spoken as empty.
  *
  * Limit: media parsed inside a closed declarative shadow root (<template shadowrootmode="closed">) has no handle a page
- * script can reach, so it cannot be pinned here. Chromium covers it with --mute-audio; WebKit and Firefox do not.
+ * script can reach, so it cannot be pinned here. Chromium covers it with --mute-audio and Firefox with the
+ * media.volume_scale pref; WebKit has no engine-level switch, so tools/silent_browser.cjs refuses a WebKit page whose
+ * HTML carries one (setContent and data: URLs), and a lint fails on any committed fixture that embeds one. A closed
+ * root injected at runtime (setHTMLUnsafe/innerHTML) is not scanned and cannot be pinned here; served HTML over HTTP
+ * is not scannable by the helper either. Both stay a documented WebKit limit.
  */
 (() => {
   'use strict';
